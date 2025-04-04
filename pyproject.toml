@@ -1,0 +1,31 @@
+[project]
+name = "fg-endpoint-tools"
+version = "0.1.0"
+description = "Collection of tools to work with FinnGen endpoints."
+readme = "README.md"
+authors = [
+    { name = "Vincent", email = "me@example.com" }
+]
+requires-python = ">=3.13"
+dependencies = [
+    "polars[excel]>=1.26.0",
+]
+
+[project.scripts]
+fg-endpoint-tools = "fg_endpoint_tools:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "ipython>=9.0.2",
+    "pytest>=8.3.5",
+    "ruff>=0.11.2",
+]
+
+[tool.pytest.ini_options]
+addopts = [
+    "--import-mode=importlib",
+]
