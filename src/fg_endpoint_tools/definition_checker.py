@@ -17,22 +17,22 @@ Assumptions:
 import json
 from pathlib import Path
 
-import jinja2
 import polars as pl
 
 
-def read_definitions_excel(path: Path):
-    dataf = pl.read_excel(path, read_options={"dtypes": "string"})
+def read_definitions_excel(file_like):
+    dataf = pl.read_excel(file_like, read_options={"dtypes": "string"})
     return dataf
 
 
-def collect_report(dataf):
+def collect_report(file_like):
+    dataf = read_definitions_excel(file_like)
     return {
-        "summary": as_json(get_summary(dataf)),
-        "duplicates": as_json(find_duplicates_by_name(dataf)),
-        "any_exallc": as_json(find_any_exallc(dataf)),
-        "any_exmore": as_json(find_any_exmore(dataf)),
-        "broken_assumptions_wide": as_json(check_wide_cancer_endpoints(dataf)),
+        "summary": get_summary(dataf),
+        "duplicates": find_duplicates_by_name(dataf),
+        "any_exallc": find_any_exallc(dataf),
+        "any_exmore": find_any_exmore(dataf),
+        "broken_assumptions_wide": check_wide_cancer_endpoints(dataf),
     }
 
 

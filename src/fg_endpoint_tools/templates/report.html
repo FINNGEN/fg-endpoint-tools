@@ -1,67 +1,256 @@
 <!DOCTYPE html>
 <head>
+  <title>Endpoint Definition Checker</title>
   <style>
+:root {
+  box-sizing: border-box;
+}
+*, ::before, ::after {
+  box-sizing: inherit;
+}
+
 html {
   font-family: "Source Sans 3", sans-serif;
+  font-size: 1.2rem;
+  background: #f6f6f6;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: "Source Serif 4", serif;
+code {
+  font-weight: 600;
 }
 
-pre {
-  font-family: "Source Code Pro", monospace;
+main {
+  max-width: 140ch;
+  margin: auto;
 }
 
-summary {
-  color: LinkText;
-  text-decoration: underline;
+.check {
+  margin-bottom: 0.5em;
+
+  border: 1px solid #dfdfdf;
+  border-radius: 8px;
+}
+
+.check:hover {
+  outline: 2px solid #2dadda;
+}
+
+.check.closed .output-details {
+  display: none;
+}
+
+.check.closed, .check.preview {
   cursor: pointer;
 }
+
+:is(.check.preview, .check.opened) .check-expectation {
+  border-bottom: 1px solid #dadada;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.check.opened {
+  outline: 2px solid #2dadda;
+  box-shadow: 0 0 20px 0 #2dadda6b;
+}
+
+.check.opened .check-expectation {
+  position:sticky;
+  top: 0;
+}
+
+.check-expectation {
+  padding: 0.5em 1em;
+
+  display: flex;
+  column-gap: 0.5em;
+  align-items: center;
+
+  font-family: "Source Serif 4", serif;
+  border-radius: 8px;
+  background: linear-gradient(#fff, #fff 50%, #fafafa);
+}
+
+.check-expectation :nth-child(2) {
+  flex-grow: 1;
+}
+
+.check-expectation p {
+  /* Resets default to 0, handling margin and padding on our own*/
+  margin: 0;
+}
+
+.action-show-details {
+  color: LinkText;
+  text-decoration: underline;
+
+  font-family: "Source Sans 3", sans-serif;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+.output-details {
+  padding: 0.5em 1em;
+
+  text-wrap: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  font-size: 0.8rem;
+
+  background-color: #F9FAFE;
+  border-radius: 0 0 8px 8px;
+}
+
   </style>
 </head>
 <main>
 <h1>Endpoint Definition Checker</h1>
 
-<h2>Summary</h2>
-<pre>
-{{ summary }}
-</pre>
-
 <article>
-  <h2>Checks</h2>
+    <p>{{ file_name }}</p>
 
-  <p>
-      I assume all endpoints have a different <code>NAME</code>.
-      <details>
-        <summary>Show full output</summary>
-        <pre>{{ duplicates }}</pre>
-      </details>
-  </p>
-    
+    <p>{{ summary.n_columns }} columns × {{ summary.n_rows }} rows</p>
+
+    <ul>
+      <li>
+      Control definitions?
+      {% if summary.has_control_definitions %}
+        Yes.
+      {% else %}
+        No.
+      {% endif %}
+      </li>
+      <li>
+      Core / non-core info?
+      {% if summary.has_core_info %}
+        Yes.
+      {% else %}
+        No.
+      {% endif %}
+      </li>
+  </ul>
+  <p>✅ XXX  ⚠️ XXX 🔴 XXX</p>
+  <p>{{ run_datetime }}</p>
 </article>
 
 
-<h2>Duplicate endpoint names</h2>
-<pre>
-{{ duplicates }}
-</pre>
+<h2>Checks</h2>
 
+<h3>Endpoint naming</h3>
 
-<h2>Any _EXALLC?</h2>
-<pre>
-{{ any_exallc }}
-</pre>
+<article class="check closed">
+  <div class="check-expectation">
+    <p>✅</p>
+    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
+    <p class="action-show-details">Show details &gt;</p>
+  </div>
+  <div class="output-details hidden">
+    {{ duplicates }}
+  </div>
+</article>
 
+<article class="check closed">
+  <div class="check-expectation">
+    <p>✅</p>
+    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
+    <p class="action-show-details">Show details &gt;&gt;</p>
+  </div>
+  <div class="output-details hidden">
+    {{ duplicates }}
+  </div>
+</article>
 
-<h2>Any _EXMORE?</h2>
-<pre>
-{{ any_exmore }}
-</pre>
+<article class="check closed">
+  <div class="check-expectation">
+    <p>✅</p>
+    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
+    <p class="action-show-details">Show details &gt;&gt;</p>
+  </div>
+  <div class="output-details hidden">
+    {{ duplicates }}
+  </div>
+</article>
 
-<h2>_WIDE endpoints broken assumptions</h2>
-<pre>
-{{ broken_assumptions_wide }}
-</pre>
+<article class="check closed">
+  <div class="check-expectation">
+    <p>✅</p>
+    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
+    <p class="action-show-details">Show details &gt;&gt;</p>
+  </div>
+  <div class="output-details hidden">
+    {{ duplicates }}
+  </div>
+</article>
+
+<article class="check closed">
+  <div class="check-expectation">
+    <p>✅</p>
+    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
+    <p class="action-show-details">Show details &gt;&gt;</p>
+  </div>
+  <div class="output-details hidden">
+    {{ duplicates }}
+  </div>
+</article>
+
+<article class="check preview">
+  <div class="check-expectation">
+    <p>⚠️</p>
+    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
+    <p class="action-show-details">Show details &gt;&gt;</p>
+  </div>
+  <div class="output-details">
+  {% for ee in any_exmore %}
+    {{ee}},
+  {% endfor %}
+  </div>
+</article>
+
+<article class="check opened">
+  <div class="check-expectation">
+    <p>⚠️</p>
+    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXALLC</code>.</p>
+    <p class="action-show-details">Hide details vv</p>
+  </div>
+  <div class="output-details">
+    <p>Found <b>{{ any_exallc | length }}</b> endpoints not meeting this expectation.</p>
+
+    <table>
+      <tr>
+        <th>Endpoint <code>NAME</code></th>
+      <tr>
+      {% for ee in any_exallc %}
+      <tr>
+        <td>{{ ee }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+</article>
+<article class="check preview">
+  <div class="check-expectation">
+    <p>⚠️</p>
+    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
+    <p class="action-show-details">Show details &gt;&gt;</p>
+  </div>
+  <div class="output-details">
+  {% for ee in any_exmore %}
+    {{ee}},
+  {% endfor %}
+  </div>
+</article>
+<article class="check preview">
+  <div class="check-expectation">
+    <p>⚠️</p>
+    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
+    <p class="action-show-details">Show details &gt;&gt;</p>
+  </div>
+  <div class="output-details">
+  {% for ee in any_exmore %}
+    {{ee}},
+  {% endfor %}
+  </div>
+</article>
 
 </main>
