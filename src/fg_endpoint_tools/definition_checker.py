@@ -14,14 +14,30 @@ Assumptions:
 - should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
 """
 
+import json
 from pathlib import Path
 
+import jinja2
 import polars as pl
 
 
 def read_definitions_excel(path: Path):
     dataf = pl.read_excel(path, read_options={"dtypes": "string"})
     return dataf
+
+
+def collect_report(dataf):
+    return {
+        "summary": as_json(get_summary(dataf)),
+        "duplicates": as_json(find_duplicates_by_name(dataf)),
+        "any_exallc": as_json(find_any_exallc(dataf)),
+        "any_exmore": as_json(find_any_exmore(dataf)),
+        "broken_assumptions_wide": as_json(check_wide_cancer_endpoints(dataf)),
+    }
+
+
+def as_json(object):
+    return json.dumps(object, indent=2)
 
 
 def get_summary(dataf):
@@ -80,6 +96,7 @@ def find_any_with_suffix(dataf, suffix):
 
 
 def check_wide_cancer_endpoints(dataf):
+    # TODO(VIncent 2025-04-04) Rework to be separate for each assumptions
     columns_cancer = [
         "CANC_TOPO",
         "CANC_TOPO_EXCL",
@@ -193,6 +210,7 @@ def check_endpoint_has_hilmo_definition(dataf, endpoint):
 
 
 def check_cases_suffix(dataf, suffix):
+    # TODO(VIncent 2025-04-04) Rework to be just a value-differ, currently not used.
     results = []
 
     columns_can_differ = [
@@ -257,3 +275,15 @@ def check_cases_suffix(dataf, suffix):
             )
 
     return results
+
+
+def write_html_report(output_path, context):
+    env = jinja2.Environment(
+        loader=jinja2.PackageLoader("fg_endpoint_tools"),
+        autoescape=jinja2.select_autoescape(),
+    )
+
+    template = env.get_template("report.html")
+
+    with open(output_path, "w") as ff:
+        ff.write(template.render(context))

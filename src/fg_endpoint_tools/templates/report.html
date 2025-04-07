@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<head>
+  <style>
+html {
+  font-family: "Source Sans 3", sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Source Serif 4", serif;
+}
+
+pre {
+  font-family: "Source Code Pro", monospace;
+}
+
+summary {
+  color: LinkText;
+  text-decoration: underline;
+  cursor: pointer;
+}
+  </style>
+</head>
+<main>
+<h1>Endpoint Definition Checker</h1>
+
+<h2>Summary</h2>
+<pre>
+{{ summary }}
+</pre>
+
+<article>
+  <h2>Checks</h2>
+
+  <p>
+      I assume all endpoints have a different <code>NAME</code>.
+      <details>
+        <summary>Show full output</summary>
+        <pre>{{ duplicates }}</pre>
+      </details>
+  </p>
+    
+</article>
+
+
+<h2>Duplicate endpoint names</h2>
+<pre>
+{{ duplicates }}
+</pre>
+
+
+<h2>Any _EXALLC?</h2>
+<pre>
+{{ any_exallc }}
+</pre>
+
+
+<h2>Any _EXMORE?</h2>
+<pre>
+{{ any_exmore }}
+</pre>
+
+<h2>_WIDE endpoints broken assumptions</h2>
+<pre>
+{{ broken_assumptions_wide }}
+</pre>
+
+</main>
