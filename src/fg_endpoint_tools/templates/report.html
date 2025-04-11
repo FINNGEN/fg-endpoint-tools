@@ -9,19 +9,115 @@
   box-sizing: inherit;
 }
 
+h2 {
+  font-size: 1rem;
+}
+
 html {
+  max-width: 70rem;
+  margin: auto;
+  
   font-family: "Source Sans 3", sans-serif;
   font-size: 1.2rem;
+
   background: #f6f6f6;
 }
 
+body {
+  margin: 0;
+}
+
 code {
+  padding: 0 0.2em;
   font-weight: 600;
+  background-color: #c483ca10;
+  border-bottom: 1px solid #c483ca40;
+}
+
+
+header {
+  margin: auto;
+  padding: 2rem 1rem 0.5rem;
+
+  font-size: 1.25rem;
+  font-weight: bold;
+  
+  background-color: white;
+  border: 1px solid #757575;
+  border-top-width: 0;
+  border-radius: 0 0 8px 8px;
+
 }
 
 main {
-  max-width: 140ch;
-  margin: auto;
+  padding: 0 1rem;
+}
+
+.metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(auto, max-content));
+  column-gap: 0.8rem;
+
+  max-width: 120ch;
+  margin: 3rem 1rem;
+
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  & p {
+    margin: 0;
+  }
+
+  & ul {
+    margin: 0;
+    padding-left: 0.8rem;
+  }
+
+  & .metadata-item {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+
+    padding: 0.5rem 0;
+  }
+  & .metadata-item > :first-child {
+    color: #515151;
+    text-align: right;
+  }
+
+  & .metadata-item:not(:last-child) {
+    border-bottom: 1px solid #e6e6e6;
+  }
+
+  & .metadata-columns-content {
+    max-width: fit-content;
+
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 0.5rem;
+  }
+
+  & .metadata-columns-content .row {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+
+    padding: 0;
+  }
+
+  & .metadata-columns-content .row:not(:first-child) {
+    padding-top: 0.25rem;
+  }
+
+  & .metadata-columns-content .row:not(:last-child) {
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #e6e6e6;
+  }
+
+  & .actions-quick-report {
+    display: flex;
+    column-gap: 1rem;
+  }
 }
 
 .check {
@@ -29,10 +125,11 @@ main {
 
   border: 1px solid #dfdfdf;
   border-radius: 8px;
+  border-bottom-width: 3px;
 }
 
 .check:hover {
-  outline: 2px solid #2dadda;
+  border-bottom: 3px solid #2dadda;
 }
 
 .check.closed .output-details {
@@ -59,6 +156,10 @@ main {
   top: 0;
 }
 
+.check.preview .output-details {
+  color: #555;
+}
+
 .check-expectation {
   padding: 0.5em 1em;
 
@@ -66,7 +167,6 @@ main {
   column-gap: 0.5em;
   align-items: center;
 
-  font-family: "Source Serif 4", serif;
   border-radius: 8px;
   background: linear-gradient(#fff, #fff 50%, #fafafa);
 }
@@ -80,13 +180,27 @@ main {
   margin: 0;
 }
 
-.action-show-details {
-  color: LinkText;
-  text-decoration: underline;
+.description {
+  padding-right: 1rem;
+  font-family: "Source Serif 4", serif;
+}
 
+p.error-count {
+  padding-right: 1rem;
+
+  color: #555;
+  font-size: 0.8rem;
+}
+
+.action-show-details {
   font-family: "Source Sans 3", sans-serif;
   font-weight: 600;
   font-size: 0.8rem;
+
+  text-align: right;
+
+  color: LinkText;
+  text-decoration: underline;
 }
 
 .output-details {
@@ -98,96 +212,78 @@ main {
 
   font-size: 0.8rem;
 
-  background-color: #F9FAFE;
+  background-color: #fcfcfc;
   border-radius: 0 0 8px 8px;
+}
+
+.utils-break-word {
+  word-break: break-word;
 }
 
   </style>
 </head>
+<header>
+Endpoint Definition Checker
+</header>
+
 <main>
-<h1>Endpoint Definition Checker</h1>
+<article class="metadata">
+  <div class="metadata-item">
+    <p>File</p>
+    <p class="utils-break-word">{{ file_name }}</p>
+  </div>
 
-<article>
-    <p>{{ file_name }}</p>
-
+  <div class="metadata-item">
+    <p>Size</p>
     <p>{{ summary.n_columns }} columns × {{ summary.n_rows }} rows</p>
-
-    <ul>
-      <li>
-      Control definitions?
-      {% if summary.has_control_definitions %}
-        Yes.
-      {% else %}
-        No.
-      {% endif %}
-      </li>
-      <li>
-      Core / non-core info?
-      {% if summary.has_core_info %}
-        Yes.
-      {% else %}
-        No.
-      {% endif %}
-      </li>
-  </ul>
-  <p>✅ XXX  ⚠️ XXX 🔴 XXX</p>
-  <p>{{ run_datetime }}</p>
-</article>
-
-
-<h2>Checks</h2>
-
-<h3>Endpoint naming</h3>
-
-<article class="check closed">
-  <div class="check-expectation">
-    <p>✅</p>
-    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
-    <p class="action-show-details">Show details &gt;</p>
   </div>
-  <div class="output-details hidden">
-    {{ duplicates }}
-  </div>
-</article>
 
-<article class="check closed">
-  <div class="check-expectation">
-    <p>✅</p>
-    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
-    <p class="action-show-details">Show details &gt;&gt;</p>
+  <div class="metadata-item">
+    <p>Metadata columns</p>
+    <div class="metadata-columns-content">
+      <div class="row">
+        <p>Control definitions?</p>
+        <p>
+        {% if summary.has_control_definitions %}
+          Yes
+        {% else %}
+          No
+        {% endif %}
+        </p>
+      </div>
+    
+      <div class="row">
+        <p>Core / non-core info?</p>
+        <p>
+        {% if summary.has_core_info %}
+          Yes
+        {% else %}
+          No
+        {% endif %}
+        </p>
+      </div>
+    </div>
   </div>
-  <div class="output-details hidden">
-    {{ duplicates }}
+
+  <div class="metadata-item">
+    <p>Quick report</p>
+    <div class="actions-quick-report"><p>✅ XXX</p>  <p>⚠️ XXX</p> <p>🔴 XXX</p></div>
+  </div>
+
+  <div class="metadata-item">
+    <p>Checked at</p>
+    <p id="report-time">{{ run_datetime }}</p>
   </div>
 </article>
 
-<article class="check closed">
-  <div class="check-expectation">
-    <p>✅</p>
-    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
-    <p class="action-show-details">Show details &gt;&gt;</p>
-  </div>
-  <div class="output-details hidden">
-    {{ duplicates }}
-  </div>
-</article>
+
+<h2>Endpoint naming</h2>
 
 <article class="check closed">
   <div class="check-expectation">
-    <p>✅</p>
-    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
-    <p class="action-show-details">Show details &gt;&gt;</p>
-  </div>
-  <div class="output-details hidden">
-    {{ duplicates }}
-  </div>
-</article>
-
-<article class="check closed">
-  <div class="check-expectation">
-    <p>✅</p>
-    <p>I am expecting all the endpoints to have a different <code>NAME</code>.</p>
-    <p class="action-show-details">Show details &gt;&gt;</p>
+    <p class="status">✅</p>
+    <p class="description">I am expecting all the endpoints to have a different <code>NAME</code>.</p>
+    <p class="action-show-details">Show details&nbsp;&rarr;</p>
   </div>
   <div class="output-details hidden">
     {{ duplicates }}
@@ -196,9 +292,10 @@ main {
 
 <article class="check preview">
   <div class="check-expectation">
-    <p>⚠️</p>
-    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
-    <p class="action-show-details">Show details &gt;&gt;</p>
+    <p class="status">⚠️</p>
+    <p class="description">I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
+    <p class="error-count">{{ any_exmore | length }} errors</p>
+    <p class="action-show-details">Show details&nbsp;&rarr;</p>
   </div>
   <div class="output-details">
   {% for ee in any_exmore %}
@@ -209,9 +306,10 @@ main {
 
 <article class="check opened">
   <div class="check-expectation">
-    <p>⚠️</p>
-    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXALLC</code>.</p>
-    <p class="action-show-details">Hide details vv</p>
+    <p class="status">⚠️</p>
+    <p class="description">I am expecting that no endpoints <code>NAME</code> end with <code>_EXALLC</code>.</p>
+    <p class="error-count">{{ any_exallc | length }} errors</p>
+    <p class="action-show-details">Hide details&nbsp;&darr;</p>
   </div>
   <div class="output-details">
     <p>Found <b>{{ any_exallc | length }}</b> endpoints not meeting this expectation.</p>
@@ -219,37 +317,13 @@ main {
     <table>
       <tr>
         <th>Endpoint <code>NAME</code></th>
-      <tr>
+      </tr>
       {% for ee in any_exallc %}
       <tr>
         <td>{{ ee }}</td>
       </tr>
       {% endfor %}
     </table>
-  </div>
-</article>
-<article class="check preview">
-  <div class="check-expectation">
-    <p>⚠️</p>
-    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
-    <p class="action-show-details">Show details &gt;&gt;</p>
-  </div>
-  <div class="output-details">
-  {% for ee in any_exmore %}
-    {{ee}},
-  {% endfor %}
-  </div>
-</article>
-<article class="check preview">
-  <div class="check-expectation">
-    <p>⚠️</p>
-    <p>I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
-    <p class="action-show-details">Show details &gt;&gt;</p>
-  </div>
-  <div class="output-details">
-  {% for ee in any_exmore %}
-    {{ee}},
-  {% endfor %}
   </div>
 </article>
 

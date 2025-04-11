@@ -11,7 +11,7 @@ from . import definition_checker
 app = Flask(__name__)
 
 
-@app.route("/")
+@app.route("/definition-checker", methods=["GET"])
 def serve_home():
     return render_template('home.html')
 
@@ -38,4 +38,6 @@ def serve_definition_checker():
 
 
 def get_current_time() -> str:
-    return datetime.now().isoformat()
+    now =  datetime.now()
+    now_as_str = now.strftime("%c")
+    return now_as_str
