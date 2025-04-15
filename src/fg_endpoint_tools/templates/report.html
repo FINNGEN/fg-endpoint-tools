@@ -29,9 +29,12 @@ body {
 
 code {
   padding: 0 0.2em;
+
+  font-family: "Source Code Pro", monospace;
   font-weight: 600;
-  background-color: #c483ca10;
-  border-bottom: 1px solid #c483ca40;
+  
+  background-color: rgba(151, 147, 232, 0.06);
+  border-bottom: 1px solid rgba(151, 147, 232, 0.25);
 }
 
 
@@ -117,6 +120,11 @@ main {
   & .actions-quick-report {
     display: flex;
     column-gap: 1rem;
+
+    & p {
+      display: flex;
+      column-gap: 0.3rem;
+    }
   }
 }
 
@@ -130,10 +138,6 @@ main {
 
 .check:hover {
   border-bottom: 3px solid #2dadda;
-}
-
-.check.closed .output-details {
-  display: none;
 }
 
 .check.closed, .check.preview {
@@ -203,21 +207,32 @@ p.error-count {
   text-decoration: underline;
 }
 
-.output-details {
+.output-preview, .output-details {
   padding: 0.5em 1em;
+
+  font-size: 0.8rem;
+  
+  border-radius: 0 0 8px 8px;
+  background-color: #fcfcfc;
+}
+
+.output-preview {
+  margin: 0;
+  
+  color: #555;
+  font-size: 0.8rem;
 
   text-wrap: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-
-  font-size: 0.8rem;
-
-  background-color: #fcfcfc;
-  border-radius: 0 0 8px 8px;
 }
 
 .utils-break-word {
   word-break: break-word;
+}
+
+.utils-hidden {
+  display: none;
 }
 
   </style>
@@ -267,7 +282,11 @@ Endpoint Definition Checker
 
   <div class="metadata-item">
     <p>Quick report</p>
-    <div class="actions-quick-report"><p>✅ XXX</p>  <p>⚠️ XXX</p> <p>🔴 XXX</p></div>
+    <div class="actions-quick-report">
+      <p><span>✅</span><span>{{ status_counts.all_good }}</span></p>
+      <p><span>⚠️</span><span>{{ status_counts.warning }}</span></p>
+      <p><span>🔴</span><span>{{ status_counts.fail }}</span></p>
+    </div>
   </div>
 
   <div class="metadata-item">
@@ -279,52 +298,107 @@ Endpoint Definition Checker
 
 <h2>Endpoint naming</h2>
 
-<article class="check closed">
+{# TODO(Vincent 2025-04-14)  Write JS to open/close on click. #}
+
+{#
+NOTE(Vincent 2025-04-14) Not super happy on how the data and HTML are laid out here as the description
+and the output-details of a single expectation are not close to each other in the code.
+Though for now this is the way I chose to do it because I can write a single <article> and iterate over it,
+leading to no duplicate code for the HTML/soon-JS.
+#}
+{% for expectation in expectations %}
+<article class="check {{ expectation.html_view['class_check_open'] }}">
   <div class="check-expectation">
-    <p class="status">✅</p>
-    <p class="description">I am expecting all the endpoints to have a different <code>NAME</code>.</p>
+    <p class="status">
+    {% if expectation.status == "all_good" %}
+      ✅
+    {% elif expectation.status == "warning" %}
+      ⚠️
+    {% elif expectation.status == "fail" %}
+      🔴
+    {% endif %}
+    
+    </p>
+    <p class="description">
+    {% if expectation.idname == "duplicates" %}
+      I am expecting all the endpoints to have a different <code>NAME</code>.
+    {% elif expectation.idname == "any_exallc" %}
+      I am expecting that no endpoints <code>NAME</code> end with <code>_EXALLC</code>.
+    {% elif expectation.idname == "any_exmore" %}
+      I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.
+    {% endif %}
+    
+    </p>
+    <p class="error-count">
+    {{ expectation.n_errors }}
+    {% if expectation.n_errors > 1 %}
+      errors
+    {% else %}
+      error
+    {% endif %}
+    </p>
+
     <p class="action-show-details">Show details&nbsp;&rarr;</p>
   </div>
-  <div class="output-details hidden">
-    {{ duplicates }}
-  </div>
-</article>
 
-<article class="check preview">
-  <div class="check-expectation">
-    <p class="status">⚠️</p>
-    <p class="description">I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.</p>
-    <p class="error-count">{{ any_exmore | length }} errors</p>
-    <p class="action-show-details">Show details&nbsp;&rarr;</p>
-  </div>
-  <div class="output-details">
-  {% for ee in any_exmore %}
-    {{ee}},
-  {% endfor %}
-  </div>
-</article>
+  {% if expectation.endpoints_in_error %}
+  <p class="output-preview">
+    {{ expectation.endpoints_in_error | join(', ') }}
+  </p>
+  {% endif %}
 
-<article class="check opened">
-  <div class="check-expectation">
-    <p class="status">⚠️</p>
-    <p class="description">I am expecting that no endpoints <code>NAME</code> end with <code>_EXALLC</code>.</p>
-    <p class="error-count">{{ any_exallc | length }} errors</p>
-    <p class="action-show-details">Hide details&nbsp;&darr;</p>
-  </div>
-  <div class="output-details">
-    <p>Found <b>{{ any_exallc | length }}</b> endpoints not meeting this expectation.</p>
+  <div class="output-details utils-hidden">
+  {% if expectation.idname == "duplicates" %}
+    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with duplicate <code>NAME</code>.</p>
 
+    {% if expectation.endpoints_in_error %}
     <table>
       <tr>
         <th>Endpoint <code>NAME</code></th>
       </tr>
-      {% for ee in any_exallc %}
+      {% for ee in expectation.endpoints_in_error %}
       <tr>
-        <td>{{ ee }}</td>
+        <td><code>{{ ee }}</code></td>
       </tr>
       {% endfor %}
     </table>
+    {% endif %}
+
+
+  {% elif expectation.idname == "any_exallc" %}
+    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with a <code>NAME</code> ending with <code>_EXALLC</code>.</p>
+
+    {% if expectation.endpoints_in_error %}
+    <table>
+      <tr>
+        <th>Endpoint <code>NAME</code></th>
+      </tr>
+      {% for ee in expectation.endpoints_in_error %}
+      <tr>
+        <td><code>{{ ee }}</code></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+  {% elif expectation.idname == "any_exmore" %}
+    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with a <code>NAME</code> ending with <code>_EXMORE</code>.</p>
+
+    {% if expectation.endpoints_in_error %}
+    <table>
+      <tr>
+        <th>Endpoint <code>NAME</code></th>
+      </tr>
+      {% for ee in expectation.endpoints_in_error %}
+      <tr>
+        <td><code>{{ ee }}</code></td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+  {% endif %}
   </div>
 </article>
-
+{% endfor %}
 </main>

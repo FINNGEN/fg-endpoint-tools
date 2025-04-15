@@ -15,9 +15,29 @@ Assumptions:
 """
 
 import json
+from dataclasses import dataclass
+from dataclasses import field
+from enum import StrEnum
+from enum import auto
 from pathlib import Path
 
 import polars as pl
+
+
+class Status(StrEnum):
+    ALL_GOOD = auto()
+    WARNING = auto()
+    FAIL = auto()
+
+
+@dataclass
+class Expectation:
+    idname: str
+    status: Status
+    n_errors: int
+    endpoints_in_error: list[str]
+    data: any
+    html_view: dict = field(default_factory=dict)
 
 
 def read_definitions_excel(file_like):
@@ -27,12 +47,17 @@ def read_definitions_excel(file_like):
 
 def collect_report(file_like):
     dataf = read_definitions_excel(file_like)
+
+    expectations = [
+        assess_duplicates_by_name(dataf),
+        assess_any_exallc(dataf),
+        assess_any_exmore(dataf),
+        # check_wide_cancer_endpoints(dataf),  # TODO(Vincent 2025-04-11)
+    ]
+
     return {
         "summary": get_summary(dataf),
-        "duplicates": find_duplicates_by_name(dataf),
-        "any_exallc": find_any_exallc(dataf),
-        "any_exmore": find_any_exmore(dataf),
-        "broken_assumptions_wide": check_wide_cancer_endpoints(dataf),
+        "expectations": expectations,
     }
 
 
@@ -63,22 +88,51 @@ def get_summary(dataf):
     }
 
 
-def find_duplicates_by_name(dataf):
+def assess_duplicates_by_name(dataf) -> Expectation:
     assert "NAME" in dataf.columns
 
     names = dataf.get_column("NAME")
     dups = names.filter(names.is_duplicated()).unique().to_list()
 
     dups = sorted(dups)
-    return dups
+
+    status = Status.ALL_GOOD if len(dups) == 0 else Status.FAIL
+
+    return Expectation(
+        idname="duplicates",
+        status=status,
+        n_errors=len(dups),
+        endpoints_in_error=dups,
+        data=dups,
+    )
 
 
-def find_any_exallc(dataf):
-    return find_any_with_suffix(dataf, "_EXALLC")
+def assess_any_exallc(dataf) -> Expectation:
+    any_exallc = find_any_with_suffix(dataf, "_EXALLC")
+
+    status = Status.ALL_GOOD if len(any_exallc) == 0 else Status.WARNING
+
+    return Expectation(
+        idname="any_exallc",
+        status=status,
+        n_errors=len(any_exallc),
+        endpoints_in_error=any_exallc,
+        data=any_exallc,
+    )
 
 
-def find_any_exmore(dataf):
-    return find_any_with_suffix(dataf, "_EXMORE")
+def assess_any_exmore(dataf) -> Expectation:
+    any_exmore = find_any_with_suffix(dataf, "_EXMORE")
+
+    status = Status.ALL_GOOD if len(any_exmore) == 0 else Status.WARNING
+
+    return Expectation(
+        idname="any_exmore",
+        status=status,
+        n_errors=len(any_exmore),
+        endpoints_in_error=any_exmore,
+        data=any_exmore,
+    )
 
 
 def find_any_with_suffix(dataf, suffix):
