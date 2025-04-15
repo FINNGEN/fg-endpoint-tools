@@ -138,11 +138,11 @@ main {
   border-bottom-width: 3px;
 }
 
-.check:hover {
+.check:not(.opened):hover {
   border-bottom: 3px solid #2dadda;
 }
 
-.check.closed, .check.preview {
+.check.closed, .check.preview, .check-expectation {
   cursor: pointer;
 }
 
@@ -413,6 +413,11 @@ const textHide = 'Hide details ↓';
 
 for (const cc of checks) {
   cc.addEventListener('click', (event) => {
+    // Prevent triggering the open/close switch when clicking anywhere in the detailed output.
+    if (event.target.closest('.output-details')) {
+      return
+    }
+
     const action = cc.querySelector(".action-show-details");
     const output_preview = cc.querySelector(".output-preview");
     const output_details = cc.querySelector(".output-details");
