@@ -16,11 +16,13 @@ h2 {
 html {
   max-width: 70rem;
   margin: auto;
-  
+
   font-family: "Source Sans 3", sans-serif;
   font-size: 1.2rem;
 
   background: #f6f6f6;
+
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -32,7 +34,7 @@ code {
 
   font-family: "Source Code Pro", monospace;
   font-weight: 600;
-  
+
   background-color: rgba(151, 147, 232, 0.06);
   border-bottom: 1px solid rgba(151, 147, 232, 0.25);
 }
@@ -44,7 +46,7 @@ header {
 
   font-size: 1.25rem;
   font-weight: bold;
-  
+
   background-color: white;
   border: 1px solid #757575;
   border-top-width: 0;
@@ -160,10 +162,6 @@ main {
   top: 0;
 }
 
-.check.preview .output-details {
-  color: #555;
-}
-
 .check-expectation {
   padding: 0.5em 1em;
 
@@ -208,23 +206,26 @@ p.error-count {
 }
 
 .output-preview, .output-details {
-  padding: 0.5em 1em;
-
-  font-size: 0.8rem;
-  
   border-radius: 0 0 8px 8px;
   background-color: #fcfcfc;
+  font-size: 0.8rem;
+
 }
 
-.output-preview {
+.output-preview p {
   margin: 0;
-  
+  padding: 0.5em 1em;
+
   color: #555;
   font-size: 0.8rem;
 
   text-wrap: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.output-details {
+  padding: 0.5em 1em;
 }
 
 .utils-break-word {
@@ -234,7 +235,6 @@ p.error-count {
 .utils-hidden {
   display: none;
 }
-
   </style>
 </head>
 <header>
@@ -266,7 +266,7 @@ Endpoint Definition Checker
         {% endif %}
         </p>
       </div>
-    
+
       <div class="row">
         <p>Core / non-core info?</p>
         <p>
@@ -298,8 +298,6 @@ Endpoint Definition Checker
 
 <h2>Endpoint naming</h2>
 
-{# TODO(Vincent 2025-04-14)  Write JS to open/close on click. #}
-
 {#
 NOTE(Vincent 2025-04-14) Not super happy on how the data and HTML are laid out here as the description
 and the output-details of a single expectation are not close to each other in the code.
@@ -307,7 +305,11 @@ Though for now this is the way I chose to do it because I can write a single <ar
 leading to no duplicate code for the HTML/soon-JS.
 #}
 {% for expectation in expectations %}
-<article class="check {{ expectation.html_view['class_check_open'] }}">
+<article
+  class="check {{ expectation.html_view['class_check_open'] }}"
+  data-state-init="{{ expectation.html_view['class_check_open']}}"
+  data-state-current="{{ expectation.html_view['class_check_open']}}"
+>
   <div class="check-expectation">
     <p class="status">
     {% if expectation.status == "all_good" %}
@@ -317,7 +319,7 @@ leading to no duplicate code for the HTML/soon-JS.
     {% elif expectation.status == "fail" %}
       🔴
     {% endif %}
-    
+
     </p>
     <p class="description">
     {% if expectation.idname == "duplicates" %}
@@ -327,7 +329,7 @@ leading to no duplicate code for the HTML/soon-JS.
     {% elif expectation.idname == "any_exmore" %}
       I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.
     {% endif %}
-    
+
     </p>
     <p class="error-count">
     {{ expectation.n_errors }}
@@ -338,14 +340,14 @@ leading to no duplicate code for the HTML/soon-JS.
     {% endif %}
     </p>
 
-    <p class="action-show-details">Show details&nbsp;&rarr;</p>
+    <p class="action-show-details">Show details →</p>
   </div>
 
+  <div class="output-preview">
   {% if expectation.endpoints_in_error %}
-  <p class="output-preview">
-    {{ expectation.endpoints_in_error | join(', ') }}
-  </p>
+    <p>{{ expectation.endpoints_in_error | join(', ') }}</p>
   {% endif %}
+  </div>
 
   <div class="output-details utils-hidden">
   {% if expectation.idname == "duplicates" %}
@@ -402,3 +404,40 @@ leading to no duplicate code for the HTML/soon-JS.
 </article>
 {% endfor %}
 </main>
+
+<script>
+const checks = document.querySelectorAll('[data-state-init]');
+
+const textShow = 'Show details →';
+const textHide = 'Hide details ↓';
+
+for (const cc of checks) {
+  cc.addEventListener('click', (event) => {
+    const action = cc.querySelector(".action-show-details");
+    const output_preview = cc.querySelector(".output-preview");
+    const output_details = cc.querySelector(".output-details");
+
+    if (cc.dataset.stateCurrent != cc.dataset.stateInit) {
+      action.innerText = textShow;
+
+      cc.classList.remove("opened");
+      cc.classList.add(cc.dataset.stateInit);
+      
+      output_preview.classList.remove("utils-hidden");
+      output_details.classList.add("utils-hidden");
+
+      cc.dataset.stateCurrent = cc.dataset.stateInit;
+    } else {
+      action.innerText = textHide;
+
+      cc.classList.add("opened");
+      cc.classList.remove(cc.dataset.stateInit);
+      
+      output_preview.classList.add("utils-hidden");
+      output_details.classList.remove("utils-hidden");
+
+      cc.dataset.stateCurrent = 'opened';
+    }
+  });
+}
+</script>
