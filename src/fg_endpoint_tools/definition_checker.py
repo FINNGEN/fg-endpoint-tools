@@ -52,8 +52,8 @@ def collect_report(file_like):
         assess_duplicates_by_name(dataf),
         assess_any_exallc(dataf),
         assess_any_exmore(dataf),
-        # check_wide_cancer_endpoints(dataf),  # TODO(Vincent 2025-04-11)
     ]
+    expectations += check_wide_cancer_endpoints(dataf)
 
     return {
         "summary": get_summary(dataf),
@@ -150,7 +150,6 @@ def find_any_with_suffix(dataf, suffix):
 
 
 def check_wide_cancer_endpoints(dataf):
-    # TODO(VIncent 2025-04-04) Rework to be separate for each assumptions
     columns_cancer = [
         "CANC_TOPO",
         "CANC_TOPO_EXCL",
@@ -165,13 +164,6 @@ def check_wide_cancer_endpoints(dataf):
         "CONTROL_CONDITIONS",
     ]
 
-    good_state = {
-        "have_same_cancer_definition": True,
-        "wide_has_hilmo_definition": True,
-        "basic_has_hilmo_definition": False,
-        "have_same_control_definition": True,
-    }
-
     all_endpoints = set(dataf.get_column("NAME"))
 
     pair_basic_wide_endpoints = []
@@ -180,69 +172,141 @@ def check_wide_cancer_endpoints(dataf):
             basic = ee.removesuffix("_WIDE")
             pair_basic_wide_endpoints.append([basic, ee])
 
-    checks = []
+    without_basic_endpoints = []
+    different_cancer_definitions = []
+    values_cancer_definition = []
+    wide_without_hilmo_definition = []
+    basic_with_hilmo_definition = []
+    different_control_definition = []
+    values_control_definition = []
+
     for basic, wide in pair_basic_wide_endpoints:
         if basic not in all_endpoints:
-            checks.append(
-                {
-                    "basic": None,
-                    "wide": wide,
-                    "have_same_cancer_definition": None,
-                    "wide_has_hilmo_definition": None,
-                    "basic_has_hilmo_definition": None,
-                    "have_same_control_definition": None,
-                }
-            )
+            without_basic_endpoints.append({"wide": wide, "basic": basic})
             continue
 
-        # Cancer case definition
-        have_same_cancer_definition = check_pair_has_same_values(
-            dataf, [basic, wide], columns_cancer
+        has_same_cancer_definition, values_pair_cancer_definition = (
+            check_pair_has_same_values(dataf, basic, wide, columns_cancer)
         )
+        if not has_same_cancer_definition:
+            different_cancer_definitions.append({"wide": wide, "basic": basic})
+            values_cancer_definition.append(values_pair_cancer_definition)
 
-        # Hilmo case definition
-        wide_has_hilmo_definition = check_endpoint_has_hilmo_definition(dataf, wide)
-        basic_has_hilmo_definition = check_endpoint_has_hilmo_definition(dataf, basic)
+        if not check_endpoint_has_hilmo_definition(dataf, wide):
+            wide_without_hilmo_definition.append({"wide": wide, "basic": basic})
 
-        # Control definition
-        have_same_control_definition = check_pair_has_same_values(
-            dataf, [basic, wide], columns_control
+        if check_endpoint_has_hilmo_definition(dataf, basic):
+            basic_with_hilmo_definition.append({"wide": wide, "basic": basic})
+
+        has_same_control_definition, values_pair_control_definition = (
+            check_pair_has_same_values(dataf, basic, wide, columns_control)
         )
+        if not has_same_control_definition:
+            different_control_definition.append({"wide": wide, "basic": basic})
+            values_control_definition.append(values_pair_control_definition)
 
-        checks.append(
-            {
-                "basic": basic,
-                "wide": wide,
-                "have_same_cancer_definition": have_same_cancer_definition,
-                "wide_has_hilmo_definition": wide_has_hilmo_definition,
-                "basic_has_hilmo_definition": basic_has_hilmo_definition,
-                "have_same_control_definition": have_same_control_definition,
-            }
-        )
+    # Sort by endpoint _WIDE name
+    without_basic_endpoints = sorted(without_basic_endpoints, key=lambda dd: dd["wide"])
+    different_cancer_definitions = sorted(
+        different_cancer_definitions, key=lambda dd: dd["wide"]
+    )
+    values_cancer_definition = sorted(
+        values_cancer_definition, key=lambda dd: dd["wide"]
+    )
+    wide_without_hilmo_definition = sorted(
+        wide_without_hilmo_definition, key=lambda dd: dd["wide"]
+    )
+    basic_with_hilmo_definition = sorted(
+        basic_with_hilmo_definition, key=lambda dd: dd["basic"]
+    )
+    different_control_definition = sorted(
+        different_control_definition, key=lambda dd: dd["wide"]
+    )
+    values_control_definition = sorted(
+        values_control_definition, key=lambda dd: dd["wide"]
+    )
 
-    broken_assumptions = []
-    for check in checks:
-        is_good = True
+    expectations = [
+        Expectation(
+            idname="cancer_wide_has_basic_endpoint",
+            status=Status.ALL_GOOD
+            if len(without_basic_endpoints) == 0
+            else Status.FAIL,
+            n_errors=len(without_basic_endpoints),
+            endpoints_in_error=[dd["wide"] for dd in without_basic_endpoints],
+            data=without_basic_endpoints,
+        ),
+        Expectation(
+            idname="cancer_wide_same_cancer_definition",
+            status=Status.ALL_GOOD
+            if len(different_cancer_definitions) == 0
+            else Status.FAIL,
+            n_errors=len(different_cancer_definitions),
+            endpoints_in_error=[dd["wide"] for dd in different_cancer_definitions],
+            data=values_cancer_definition,
+        ),
+        Expectation(
+            idname="cancer_wide_have_hilmo_definition",
+            status=Status.ALL_GOOD
+            if len(wide_without_hilmo_definition) == 0
+            else Status.FAIL,
+            n_errors=len(wide_without_hilmo_definition),
+            endpoints_in_error=[dd["wide"] for dd in wide_without_hilmo_definition],
+            data=wide_without_hilmo_definition,
+        ),
+        Expectation(
+            idname="cancer_wide_basic_have_no_hilmo_definition",
+            status=Status.ALL_GOOD
+            if len(basic_with_hilmo_definition) == 0
+            else Status.FAIL,
+            n_errors=len(basic_with_hilmo_definition),
+            endpoints_in_error=[dd["basic"] for dd in basic_with_hilmo_definition],
+            data=basic_with_hilmo_definition,
+        ),
+        Expectation(
+            idname="cancer_wide_same_control_definition",
+            status=Status.ALL_GOOD
+            if len(different_control_definition) == 0
+            else Status.FAIL,
+            n_errors=len(different_control_definition),
+            endpoints_in_error=[dd["wide"] for dd in different_control_definition],
+            data=values_control_definition,
+        ),
+    ]
 
-        for key, good_value in good_state.items():
-            if check[key] != good_value:
-                is_good = False
-                break
-
-        if not is_good:
-            broken_assumptions.append(check)
-
-    broken_assumptions = sorted(broken_assumptions, key=lambda dd: dd["wide"])
-    return broken_assumptions
+    return expectations
 
 
-def check_pair_has_same_values(dataf, endpoint_pair, columns):
-    return (
-        dataf.filter(pl.col("NAME").is_in(endpoint_pair))
+def check_pair_has_same_values(dataf, basic, wide, columns):
+    has_same_values = (
+        dataf.filter(pl.col("NAME").is_in([basic, wide]))
         .select(columns)
         .is_duplicated()
         .all()
     )
+
+    values = (
+        dataf.filter(pl.col("NAME").is_in([basic, wide]))
+        .select(["NAME"] + columns)
+        .to_dicts()
+    )
+    values = {dd.pop("NAME"): dd for dd in values}
+
+    values = {
+        "wide": wide,
+        "basic": basic,
+        "cols_wide": values[wide],
+        "cols_basic": values[basic],
+        "diff_cols_wide": {},
+        "diff_cols_basic": {}
+    }
+
+    for col in values['cols_wide'].keys():
+        if values['cols_wide'][col] != values['cols_basic'][col]:
+            values["diff_cols_wide"][col] = values['cols_wide'][col] 
+            values["diff_cols_basic"][col] = values['cols_basic'][col] 
+   
+    return (has_same_values, values)
 
 
 def check_endpoint_has_hilmo_definition(dataf, endpoint):
@@ -329,15 +393,3 @@ def check_cases_suffix(dataf, suffix):
             )
 
     return results
-
-
-def write_html_report(output_path, context):
-    env = jinja2.Environment(
-        loader=jinja2.PackageLoader("fg_endpoint_tools"),
-        autoescape=jinja2.select_autoescape(),
-    )
-
-    template = env.get_template("report.html")
-
-    with open(output_path, "w") as ff:
-        ff.write(template.render(context))
