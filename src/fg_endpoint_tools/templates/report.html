@@ -159,16 +159,12 @@ main {
 .check-expectation {
   padding: 0.5em 1em;
 
-  display: flex;
+  display: grid;
+  grid-template-columns: 2ch auto 8ch 12ch;
   column-gap: 0.5em;
-  align-items: center;
 
   border-radius: 8px;
   background: linear-gradient(#fff, #fff 50%, #fafafa);
-}
-
-.check-expectation :nth-child(2) {
-  flex-grow: 1;
 }
 
 .check-expectation p {
@@ -177,7 +173,6 @@ main {
 }
 
 .description {
-  padding-right: 1rem;
   font-family: "Source Serif 4", serif;
 
   & code {
@@ -191,7 +186,7 @@ main {
 }
 
 p.error-count {
-  padding-right: 1rem;
+  text-align: right;
 
   color: #555;
   font-size: 0.8rem;
