@@ -10,8 +10,8 @@ Assumptions:
   . _WIDE has a definition in Hilmo
   . basic has no definition in Hilmo
 - must: <endpoint>_WIDE and basic <endpoint> have the same control definition
-- should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
-- should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
+- TODO should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
+- TODO should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
 """
 
 import json
@@ -298,14 +298,19 @@ def check_pair_has_same_values(dataf, basic, wide, columns):
         "cols_wide": values[wide],
         "cols_basic": values[basic],
         "diff_cols_wide": {},
-        "diff_cols_basic": {}
+        "diff_cols_basic": {},
+        "diffs": {},
     }
 
-    for col in values['cols_wide'].keys():
-        if values['cols_wide'][col] != values['cols_basic'][col]:
-            values["diff_cols_wide"][col] = values['cols_wide'][col] 
-            values["diff_cols_basic"][col] = values['cols_basic'][col] 
-   
+    for col in values["cols_wide"].keys():
+        if values["cols_wide"][col] != values["cols_basic"][col]:
+            values["diff_cols_wide"][col] = values["cols_wide"][col]
+            values["diff_cols_basic"][col] = values["cols_basic"][col]
+
+            values["diffs"][col] = simple_diff(
+                values["diff_cols_wide"][col], values["diff_cols_basic"][col]
+            )
+
     return (has_same_values, values)
 
 
@@ -327,69 +332,44 @@ def check_endpoint_has_hilmo_definition(dataf, endpoint):
     )
 
 
-def check_cases_suffix(dataf, suffix):
-    # TODO(VIncent 2025-04-04) Rework to be just a value-differ, currently not used.
-    results = []
+def simple_diff(string_a, string_b):
+    # Transform None to empty string.
+    string_a = string_a or ""
+    string_b = string_b or ""
 
-    columns_can_differ = [
-        "NAME",
-        "LONGNAME",
-        "CONTROL_EXCLUDE",
-        "CONTROL_CONDITIONS",
-        "CONTROLS_Modification_date",
-        "CONTROLS_Modified_by",
-        "CONTROLS_Modification_reason",
-        "OMIT",
-        "LEVEL",
-        "version",
-        "Modification_date",
-        "Modified_by",
-        "Modification_reason",
-    ]
+    min_length = min(len(string_a), len(string_b))
 
-    all_endpoints = set(dataf.get_column("NAME"))
+    same_prefix_until = 0
+    while same_prefix_until < min_length:
+        if string_a[same_prefix_until] == string_b[same_prefix_until]:
+            same_prefix_until += 1
+        else:
+            break
 
-    with_suffix = [ee for ee in all_endpoints if ee.endswith(suffix)]
-    for ee in with_suffix:
-        base = ee.removesuffix(suffix)
-        pair = dataf.filter(pl.col("NAME").is_in([ee, base])).select(
-            pl.exclude(columns_can_differ)
-        )
+    same_suffix_after = -1
+    while same_suffix_after > -min_length:
+        if string_a[same_suffix_after] == string_b[same_suffix_after]:
+            same_suffix_after -= 1
+        else:
+            break
 
-        if base not in all_endpoints:
-            results.append(
-                {
-                    "endpoint": ee,
-                    "error": f"The endpoint {ee} is missing its base endpoint {base}.",
-                }
-            )
+    diff = {
+        "string_a": {
+            "original": string_a,
+            "prefix_common": string_a[:same_prefix_until],
+            "middle_diff": string_a[
+                same_prefix_until : len(string_a) + same_suffix_after + 1
+            ],
+            "suffix_common": string_a[len(string_a) + same_suffix_after + 1 :],
+        },
+        "string_b": {
+            "original": string_b,
+            "prefix_common": string_b[:same_prefix_until],
+            "middle_diff": string_b[
+                same_prefix_until : len(string_b) + same_suffix_after + 1
+            ],
+            "suffix_common": string_b[len(string_b) + same_suffix_after + 1 :],
+        },
+    }
 
-        elif not pair.is_duplicated().all():
-            differ_by = (
-                pair
-                # Compare values within each column
-                .select(pl.all().is_duplicated())
-                # Reduce to 1 row, with True/False indicating duplicate value for each column
-                .select(pl.col("*").all())
-                # Transpose to find columns that differ
-                .unpivot()
-                .filter(~pl.col("value"))
-            )
-
-            diffs = []
-            for column in differ_by.get_column("variable"):
-                base_value = (
-                    dataf.filter(pl.col("NAME") == base).get_column(column).item()
-                )
-                ee_value = dataf.filter(pl.col("NAME") == ee).get_column(column).item()
-                diffs.append({"column": column, "base": base_value, "other": ee_value})
-
-            results.append(
-                {
-                    "endpoint": ee,
-                    "error": f"The endpoints {ee} and {base} don't have the same case definition.",
-                    "diffs": diffs,
-                }
-            )
-
-    return results
+    return diff
