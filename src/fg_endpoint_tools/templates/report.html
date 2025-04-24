@@ -223,17 +223,17 @@ p.error-count {
   & code {
     font-weight: 500;
   }
-
-  & .text-diff-mismatch {
-    padding: 0.05em;
-
-    background: #f8dfe1;
-  }
 }
 
 .no-data {
   color: #aeaeae;
   cursor: default;
+}
+
+.highlight-bad {
+  padding: 0.05em;
+
+  background: #f8dfe1;
 }
 
 .utils-break-word {
@@ -458,7 +458,7 @@ leading to no duplicate code for the HTML/soon-JS.
               <td>
                 {% if pair['cols_wide'][col] %}
                 <code>{{ pair['diffs'][col]['string_a']['prefix_common'] }}</code><!-- 
-                --><code class="text-diff-mismatch">{{ pair['diffs'][col]['string_a']['middle_diff'] }}</code><!--
+                --><code class="highlight-bad">{{ pair['diffs'][col]['string_a']['middle_diff'] }}</code><!--
                 --><code>{{ pair['diffs'][col]['string_a']['suffix_common'] }}</code>
                 {% else %}
                 <span class="no-data">&mdash;</span>
@@ -471,7 +471,7 @@ leading to no duplicate code for the HTML/soon-JS.
               <td>
                 {% if pair['cols_basic'][col] %}
                 <code>{{ pair['diffs'][col]['string_b']['prefix_common'] }}</code><!-- 
-                --><code class="text-diff-mismatch">{{ pair['diffs'][col]['string_b']['middle_diff'] }}</code><!--
+                --><code class="highlight-bad">{{ pair['diffs'][col]['string_b']['middle_diff'] }}</code><!--
                 --><code>{{ pair['diffs'][col]['string_b']['suffix_common'] }}</code>
                 {% else %}
                 <span class="no-data">&mdash;</span>
@@ -500,13 +500,13 @@ leading to no duplicate code for the HTML/soon-JS.
       </tr>
       {% for dd in expectation.data %}
       <tr>
-        <td><code>{{ dd.wide }}</code></td>
+        <td><code>{{ dd.endpoint }}</code></td>
         {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
         <td>
           {% if dd['values'][col] %}
           <code>{{ dd['values'][col] }}</code>
           {% else %}
-          <span class="no-data">&mdash;</span>
+          <span class="no-data highlight-bad">&mdash;</span>
           {% endif %}
         </td>
         {% endfor %}
@@ -520,14 +520,25 @@ leading to no duplicate code for the HTML/soon-JS.
       Found <b>{{ expectation.endpoints_in_error | length }}</b> basic endpoints (counterpart of their cancer <code>_WIDE</code> endpoints) that have a definition in some of the Hilmo columns when they should not.
     </p>
 
-    {# TODO(Vincent 2025-04-17) Display column and value of the unexpected definition. #}
     <table>
       <tr>
         <th>Endpoint <code>NAME</code></th>
+        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
+        <th>Value for <code>{{ col }}</code></th>
+        {% endfor %}
       </tr>
       {% for dd in expectation.data %}
       <tr>
-        <td><code>{{ dd.basic }}</code></td>
+        <td><code>{{ dd.endpoint }}</code></td>
+        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
+        <td>
+          {% if dd['values'][col] %}
+          <code class="highlight-bad">{{ dd['values'][col] }}</code>
+          {% else %}
+          <span class="no-data">&mdash;</span>
+          {% endif %}
+        </td>
+        {% endfor %}
       </tr>
       {% endfor %}
     </table>
@@ -556,7 +567,7 @@ leading to no duplicate code for the HTML/soon-JS.
               <td>
                 {% if pair['cols_wide'][col] %}
                 <code>{{ pair['diffs'][col]['string_a']['prefix_common'] }}</code><!-- 
-                --><code class="text-diff-mismatch">{{ pair['diffs'][col]['string_a']['middle_diff'] }}</code><!--
+                --><code class="highlight-bad">{{ pair['diffs'][col]['string_a']['middle_diff'] }}</code><!--
                 --><code>{{ pair['diffs'][col]['string_a']['suffix_common'] }}</code>
                 {% else %}
                 <span class="no-data">&mdash;</span>
@@ -569,7 +580,7 @@ leading to no duplicate code for the HTML/soon-JS.
               <td>
                 {% if pair['cols_basic'][col] %}
                 <code>{{ pair['diffs'][col]['string_b']['prefix_common'] }}</code><!-- 
-                --><code class="text-diff-mismatch">{{ pair['diffs'][col]['string_b']['middle_diff'] }}</code><!--
+                --><code class="highlight-bad">{{ pair['diffs'][col]['string_b']['middle_diff'] }}</code><!--
                 --><code>{{ pair['diffs'][col]['string_b']['suffix_common'] }}</code>
                 {% else %}
                 <span class="no-data">&mdash;</span>

@@ -181,6 +181,7 @@ def assess_wide_cancer_endpoints(dataf):
     wide_without_hilmo_definition_data = []
     #
     basic_with_hilmo_definition = []
+    basic_with_hilmo_definition_data = []
     #
     different_control_definition = []
     different_control_definition_data = []
@@ -197,15 +198,19 @@ def assess_wide_cancer_endpoints(dataf):
             different_cancer_definitions.append({"wide": wide, "basic": basic})
             different_cancer_definitions_data.append(values_pair_cancer_definition)
 
-        has_hilmo_definition, values_hilmo_definition = (
+        wide_has_hilmo_definition, wide_hilmo_definition_values = (
             check_endpoint_has_hilmo_definition(dataf, wide)
         )
-        if not has_hilmo_definition:
+        if not wide_has_hilmo_definition:
             wide_without_hilmo_definition.append({"wide": wide, "basic": basic})
-            wide_without_hilmo_definition_data.append(values_hilmo_definition)
+            wide_without_hilmo_definition_data.append(wide_hilmo_definition_values)
 
-        if check_endpoint_has_hilmo_definition(dataf, basic):
+        basic_has_hilmo_definition, basic_hilmo_definition_values = (
+            check_endpoint_has_hilmo_definition(dataf, basic)
+        )
+        if basic_has_hilmo_definition:
             basic_with_hilmo_definition.append({"wide": wide, "basic": basic})
+            basic_with_hilmo_definition_data.append(basic_hilmo_definition_values)
 
         has_same_control_definition, values_pair_control_definition = (
             check_pair_has_same_values(dataf, basic, wide, columns_control)
@@ -216,21 +221,28 @@ def assess_wide_cancer_endpoints(dataf):
 
     # Sort by endpoint _WIDE name
     without_basic_endpoints = sorted(without_basic_endpoints, key=lambda dd: dd["wide"])
+    #
     different_cancer_definitions = sorted(
         different_cancer_definitions, key=lambda dd: dd["wide"]
     )
     different_cancer_definitions_data = sorted(
         different_cancer_definitions_data, key=lambda dd: dd["wide"]
     )
+    #
     wide_without_hilmo_definition = sorted(
         wide_without_hilmo_definition, key=lambda dd: dd["wide"]
     )
     wide_without_hilmo_definition_data = sorted(
-        wide_without_hilmo_definition_data, key=lambda dd: dd["wide"]
+        wide_without_hilmo_definition_data, key=lambda dd: dd["endpoint"]
     )
+    #
     basic_with_hilmo_definition = sorted(
         basic_with_hilmo_definition, key=lambda dd: dd["basic"]
     )
+    basic_with_hilmo_definition_data = sorted(
+        basic_with_hilmo_definition_data, key=lambda dd: dd["endpoint"]
+    )
+    #
     different_control_definition = sorted(
         different_control_definition, key=lambda dd: dd["wide"]
     )
@@ -273,7 +285,7 @@ def assess_wide_cancer_endpoints(dataf):
             else Status.FAIL,
             n_errors=len(basic_with_hilmo_definition),
             endpoints_in_error=[dd["basic"] for dd in basic_with_hilmo_definition],
-            data=basic_with_hilmo_definition,
+            data=basic_with_hilmo_definition_data,
         ),
         Expectation(
             idname="cancer_wide_same_control_definition",
@@ -343,7 +355,7 @@ def check_endpoint_has_hilmo_definition(dataf, endpoint):
     )
     values = values[0]  # only 1 endpoint => only 1 row
 
-    data = {"wide": endpoint, "values": values}
+    data = {"endpoint": endpoint, "values": values}
 
     has_hilmo_definition = (
         dataf.filter(pl.col("NAME") == endpoint)
