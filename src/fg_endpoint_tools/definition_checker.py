@@ -53,7 +53,7 @@ def collect_report(file_like):
         assess_any_exallc(dataf),
         assess_any_exmore(dataf),
     ]
-    expectations += check_wide_cancer_endpoints(dataf)
+    expectations += assess_wide_cancer_endpoints(dataf)
 
     return {
         "summary": get_summary(dataf),
@@ -149,7 +149,7 @@ def find_any_with_suffix(dataf, suffix):
     return with_suffix
 
 
-def check_wide_cancer_endpoints(dataf):
+def assess_wide_cancer_endpoints(dataf):
     columns_cancer = [
         "CANC_TOPO",
         "CANC_TOPO_EXCL",
@@ -173,12 +173,17 @@ def check_wide_cancer_endpoints(dataf):
             pair_basic_wide_endpoints.append([basic, ee])
 
     without_basic_endpoints = []
+    #
     different_cancer_definitions = []
-    values_cancer_definition = []
+    different_cancer_definitions_data = []
+    #
     wide_without_hilmo_definition = []
+    wide_without_hilmo_definition_data = []
+    #
     basic_with_hilmo_definition = []
+    #
     different_control_definition = []
-    values_control_definition = []
+    different_control_definition_data = []
 
     for basic, wide in pair_basic_wide_endpoints:
         if basic not in all_endpoints:
@@ -190,10 +195,14 @@ def check_wide_cancer_endpoints(dataf):
         )
         if not has_same_cancer_definition:
             different_cancer_definitions.append({"wide": wide, "basic": basic})
-            values_cancer_definition.append(values_pair_cancer_definition)
+            different_cancer_definitions_data.append(values_pair_cancer_definition)
 
-        if not check_endpoint_has_hilmo_definition(dataf, wide):
+        has_hilmo_definition, values_hilmo_definition = (
+            check_endpoint_has_hilmo_definition(dataf, wide)
+        )
+        if not has_hilmo_definition:
             wide_without_hilmo_definition.append({"wide": wide, "basic": basic})
+            wide_without_hilmo_definition_data.append(values_hilmo_definition)
 
         if check_endpoint_has_hilmo_definition(dataf, basic):
             basic_with_hilmo_definition.append({"wide": wide, "basic": basic})
@@ -203,18 +212,21 @@ def check_wide_cancer_endpoints(dataf):
         )
         if not has_same_control_definition:
             different_control_definition.append({"wide": wide, "basic": basic})
-            values_control_definition.append(values_pair_control_definition)
+            different_control_definition_data.append(values_pair_control_definition)
 
     # Sort by endpoint _WIDE name
     without_basic_endpoints = sorted(without_basic_endpoints, key=lambda dd: dd["wide"])
     different_cancer_definitions = sorted(
         different_cancer_definitions, key=lambda dd: dd["wide"]
     )
-    values_cancer_definition = sorted(
-        values_cancer_definition, key=lambda dd: dd["wide"]
+    different_cancer_definitions_data = sorted(
+        different_cancer_definitions_data, key=lambda dd: dd["wide"]
     )
     wide_without_hilmo_definition = sorted(
         wide_without_hilmo_definition, key=lambda dd: dd["wide"]
+    )
+    wide_without_hilmo_definition_data = sorted(
+        wide_without_hilmo_definition_data, key=lambda dd: dd["wide"]
     )
     basic_with_hilmo_definition = sorted(
         basic_with_hilmo_definition, key=lambda dd: dd["basic"]
@@ -222,8 +234,8 @@ def check_wide_cancer_endpoints(dataf):
     different_control_definition = sorted(
         different_control_definition, key=lambda dd: dd["wide"]
     )
-    values_control_definition = sorted(
-        values_control_definition, key=lambda dd: dd["wide"]
+    different_control_definition_data = sorted(
+        different_control_definition_data, key=lambda dd: dd["wide"]
     )
 
     expectations = [
@@ -243,7 +255,7 @@ def check_wide_cancer_endpoints(dataf):
             else Status.FAIL,
             n_errors=len(different_cancer_definitions),
             endpoints_in_error=[dd["wide"] for dd in different_cancer_definitions],
-            data=values_cancer_definition,
+            data=different_cancer_definitions_data,
         ),
         Expectation(
             idname="cancer_wide_have_hilmo_definition",
@@ -252,7 +264,7 @@ def check_wide_cancer_endpoints(dataf):
             else Status.FAIL,
             n_errors=len(wide_without_hilmo_definition),
             endpoints_in_error=[dd["wide"] for dd in wide_without_hilmo_definition],
-            data=wide_without_hilmo_definition,
+            data=wide_without_hilmo_definition_data,
         ),
         Expectation(
             idname="cancer_wide_basic_have_no_hilmo_definition",
@@ -270,7 +282,7 @@ def check_wide_cancer_endpoints(dataf):
             else Status.FAIL,
             n_errors=len(different_control_definition),
             endpoints_in_error=[dd["wide"] for dd in different_control_definition],
-            data=values_control_definition,
+            data=different_control_definition_data,
         ),
     ]
 
@@ -324,12 +336,23 @@ def check_endpoint_has_hilmo_definition(dataf, endpoint):
         "HD_ICD_8_EXCL",
     ]
 
-    return (
+    values = (
+        dataf.filter(pl.col("NAME") == endpoint)
+        .select(pl.col(columns_hilmo))
+        .to_dicts()
+    )
+    values = values[0]  # only 1 endpoint => only 1 row
+
+    data = {"wide": endpoint, "values": values}
+
+    has_hilmo_definition = (
         dataf.filter(pl.col("NAME") == endpoint)
         .select(pl.col(columns_hilmo).is_not_null())
         .select(pl.any_horizontal(pl.all()))
         .item()
     )
+
+    return has_hilmo_definition, data
 
 
 def simple_diff(string_a, string_b):

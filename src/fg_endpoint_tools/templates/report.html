@@ -231,6 +231,11 @@ p.error-count {
   }
 }
 
+.no-data {
+  color: #aeaeae;
+  cursor: default;
+}
+
 .utils-break-word {
   word-break: break-word;
 }
@@ -489,10 +494,22 @@ leading to no duplicate code for the HTML/soon-JS.
     <table>
       <tr>
         <th>Endpoint <code>NAME</code></th>
+        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
+        <th>Value for <code>{{ col }}</code></th>
+        {% endfor %}
       </tr>
       {% for dd in expectation.data %}
       <tr>
         <td><code>{{ dd.wide }}</code></td>
+        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
+        <td>
+          {% if dd['values'][col] %}
+          <code>{{ dd['values'][col] }}</code>
+          {% else %}
+          <span class="no-data">&mdash;</span>
+          {% endif %}
+        </td>
+        {% endfor %}
       </tr>
       {% endfor %}
     </table>
@@ -500,7 +517,7 @@ leading to no duplicate code for the HTML/soon-JS.
 
   {% elif expectation.idname == "cancer_wide_basic_have_no_hilmo_definition"%}
     <p>
-      Found <b>{{ expectation.endpoints_in_error | length }}</b> basic counterpart endpoints of cancer <code>_WIDE</code> endpoints that have a definition in some of the Hilmo columns when they should not.
+      Found <b>{{ expectation.endpoints_in_error | length }}</b> basic endpoints (counterpart of their cancer <code>_WIDE</code> endpoints) that have a definition in some of the Hilmo columns when they should not.
     </p>
 
     {# TODO(Vincent 2025-04-17) Display column and value of the unexpected definition. #}
