@@ -2,6 +2,7 @@
 <head>
   <title>Endpoint Definition Checker</title>
   <style>
+/* ~~~ RESETS ~~~ */ 
 :root {
   box-sizing: border-box;
 }
@@ -9,8 +10,17 @@
   box-sizing: inherit;
 }
 
+
 h2 {
   font-size: 1.25rem;
+}
+
+tr:nth-child(2n + 3) {
+  background: rgb(243, 243, 243);
+}
+
+th {
+  text-align: left;  
 }
 
 html {
@@ -50,6 +60,7 @@ header {
 main {
   padding: 0 1rem;
 }
+
 
 .metadata {
   display: grid;
@@ -222,6 +233,10 @@ p.error-count {
 
   & code {
     font-weight: 500;
+  }
+
+  & article:not(:last-child) {
+    margin-bottom: 2em;
   }
 }
 
