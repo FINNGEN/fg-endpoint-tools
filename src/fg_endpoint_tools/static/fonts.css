@@ -1,0 +1,53 @@
+/* Source Code Pro Variable Font - Upright */
+@font-face {
+  font-family: 'Source Code Pro Variable';
+  src: url('./SourceCodeVF-Upright.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Source Code Pro Variable Font - Italic */
+@font-face {
+  font-family: 'Source Code Pro Variable';
+  src: url('./SourceCodeVF-Italic.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Source Sans 3 Variable Font - Upright */
+@font-face {
+  font-family: 'Source Sans 3 Variable';
+  src: url('./SourceSans3VF-Upright.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Source Sans 3 Variable Font - Italic */
+@font-face {
+  font-family: 'Source Sans 3 Variable';
+  src: url('./SourceSans3VF-Italic.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Source Serif 4 Variable Font - Roman (Upright) */
+@font-face {
+  font-family: 'Source Serif 4 Variable';
+  src: url('./SourceSerif4Variable-Roman.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Source Serif 4 Variable Font - Italic */
+@font-face {
+  font-family: 'Source Serif 4 Variable';
+  src: url('./SourceSerif4Variable-Italic.otf.woff2') format('woff2');
+  font-weight: 200 900;
+  font-style: italic;
+  font-display: swap;
+}
