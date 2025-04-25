@@ -1,9 +1,144 @@
 <!DOCTYPE html>
+<head>
+  <title>FinnGen Endpoint Definition Checker</title>
+  <style>
+html {
+  max-width: 170ch;
+  margin: auto;
+
+  background: #f6f6f6;
+  font-family: "Source Sans 3", sans-serif;
+}
+
+body {
+  margin: 0;
+}
+
+form {
+  display: none;
+}
+
+header {
+  padding: 2rem 1rem 0.5rem;
+
+  font-size: 1.5em;
+  font-weight: bold;
+
+  background-color: white;
+  border: 1px solid #757575;
+  border-top-width: 0;
+  border-radius: 0 0 8px 8px;
+
+}
+
+#drop-area {
+  max-width: 100ch;
+  height: min(60vh, 40ch);
+
+  margin: auto;
+  margin-top: 3em;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  font-family: "Source Serif 4", serif;
+  font-size: 1.25rem;
+  text-align: center;
+  text-wrap: balance;
+
+  background: white;
+  border: 2px dashed #aaa;
+  border-radius: 12px;
+
+  cursor: pointer;
+}
+#drop-area.highlight {
+  border-color: purple;
+}
+  </style>
+</head>
+<body>
+
+<header>
+Endpoint Definition Checker
+</header>
+
 <main>
-<form action="/definition-checker" method="post" enctype="multipart/form-data">
-  <input type="file" id="file" name="file" />
-  <button>
-  Submit
-  </button>
+<div id="drop-area">
+  <p>Drag and drop a <b>FinnGen endpoint definition file</b> here.</p>
+</div>
+
+<form id="file-upload-form" action="/definition-checker" method="post" enctype="multipart/form-data" style="display: none;">
+  <input type="file" id="file-input" name="file">
 </form>
+
+<script>
+const dropArea = document.getElementById('drop-area');
+const fileInput = document.getElementById('file-input');
+const form = document.getElementById('file-upload-form');
+
+// Prevent default drag behaviors
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, preventDefaults, false);
+  document.body.addEventListener(eventName, preventDefaults, false); // Prevent dropping anywhere else on the page
+});
+
+// Highlight drop area when dragging over
+['dragenter', 'dragover'].forEach(eventName => {
+  dropArea.addEventListener(eventName, highlight, false);
+});
+
+['dragleave', 'drop'].forEach(eventName => {
+  dropArea.addEventListener(eventName, unhighlight, false);
+});
+
+// Handle dropped files
+dropArea.addEventListener('drop', handleDrop, false);
+
+// Handle click to upload
+dropArea.addEventListener('click', (e) => {
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', handleFilesSelect, false);
+
+
+function preventDefaults (e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+function highlight(e) {
+  dropArea.classList.add('highlight');
+}
+
+function unhighlight(e) {
+  dropArea.classList.remove('highlight');
+}
+
+function handleDrop(e) {
+  const dt = e.dataTransfer;
+  const files = dt.files;
+  handleFiles(files);
+}
+
+function handleFilesSelect(e) {
+  const files = e.target.files;
+  handleFiles(files);
+}
+
+function handleFiles(files) {
+  if (files.length > 0) {
+    // Assign the selected/dropped files to the file input's files property
+    // This is essential for form.submit() to include the file.
+    fileInput.files = files;
+
+    // Automatically submit the form
+    form.submit();
+  }
+}
+</script>
+
 </main>
+</body>
