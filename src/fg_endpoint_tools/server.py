@@ -11,12 +11,12 @@ from . import definition_checker
 app = Flask(__name__)
 
 
-@app.route("/definition-checker", methods=["GET"])
+@app.route("/definition-checker/", methods=["GET"])
 def serve_home():
     return render_template("home.html")
 
 
-@app.route("/definition-checker", methods=["POST"])
+@app.route("/definition-checker/", methods=["POST"])
 def serve_definition_checker():
     file = request.files["file"]
 
