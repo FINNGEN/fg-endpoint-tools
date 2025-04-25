@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.13"
 dependencies = [
     "flask>=3.1.0",
+    "gunicorn>=23.0.0",
     "polars[excel]>=1.26.0",
 ]
 
