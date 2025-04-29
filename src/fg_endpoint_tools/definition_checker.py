@@ -10,7 +10,7 @@ Assumptions:
   . _WIDE has a definition in Hilmo
   . basic has no definition in Hilmo
 - must: <endpoint>_WIDE and basic <endpoint> have the same control definition
-- TODO should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
+- should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
 - TODO should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
 """
 
@@ -52,6 +52,7 @@ def collect_report(file_like):
         assess_duplicates_by_name(dataf),
         assess_any_exallc(dataf),
         assess_any_exmore(dataf),
+        assess_hd_cod_same_icd(dataf),
     ]
     expectations += assess_wide_cancer_endpoints(dataf)
 
@@ -365,6 +366,80 @@ def check_endpoint_has_hilmo_definition(dataf, endpoint):
     )
 
     return has_hilmo_definition, data
+
+
+def assess_hd_cod_same_icd(dataf):
+    """An endpoint HD_ICD_* definitions should be the same as its COD_ICD_* ones"""
+    with_diff = (
+        dataf.select(
+            pl.col("NAME"),
+            pl.col("HD_ICD_10"),
+            pl.col("HD_ICD_9"),
+            pl.col("HD_ICD_8"),
+            pl.col("HD_ICD_10_EXCL"),
+            pl.col("HD_ICD_9_EXCL"),
+            pl.col("HD_ICD_8_EXCL"),
+            pl.col("COD_ICD_10"),
+            pl.col("COD_ICD_9"),
+            pl.col("COD_ICD_8"),
+            pl.col("COD_ICD_10_EXCL"),
+            pl.col("COD_ICD_9_EXCL"),
+            pl.col("COD_ICD_8_EXCL"),
+            (
+                (pl.col("HD_ICD_10").ne_missing(pl.col("COD_ICD_10")))
+                | (pl.col("HD_ICD_9").ne_missing(pl.col("COD_ICD_9")))
+                | (pl.col("HD_ICD_8").ne_missing(pl.col("COD_ICD_8")))
+                | (pl.col("HD_ICD_10_EXCL").ne_missing(pl.col("COD_ICD_10_EXCL")))
+                | (pl.col("HD_ICD_9_EXCL").ne_missing(pl.col("COD_ICD_9_EXCL")))
+                | (pl.col("HD_ICD_8_EXCL").ne_missing(pl.col("COD_ICD_8_EXCL")))
+            ).alias("AnyDiffICD"),
+        )
+        #
+        .filter(pl.col("AnyDiffICD"))
+        #
+        .sort(by=pl.col("NAME"))
+    )
+
+    endpoints_in_error = (
+        with_diff.get_column("NAME").unique(maintain_order=True).to_list()
+    )
+
+    status = Status.ALL_GOOD if len(endpoints_in_error) == 0 else Status.WARNING
+
+    # Building the data
+    data = []
+    check_pair_cols = [
+        ["HD_ICD_10", "COD_ICD_10"],
+        ["HD_ICD_9", "COD_ICD_9"],
+        ["HD_ICD_8", "COD_ICD_8"],
+        ["HD_ICD_10_EXCL", "COD_ICD_10_EXCL"],
+        ["HD_ICD_9_EXCL", "COD_ICD_9_EXCL"],
+        ["HD_ICD_8_EXCL", "COD_ICD_8_EXCL"],
+    ]
+    for endpoint_data in with_diff.to_dicts():
+        endpoint = endpoint_data.pop("NAME")
+        endpoint_data.pop("AnyDiffICD")
+
+        endpoint_data["endpoint"] = endpoint
+        endpoint_data["diffs"] = []
+
+        for hd_col, cod_col in check_pair_cols:
+            if endpoint_data[hd_col] != endpoint_data[cod_col]:
+                diff = simple_diff(endpoint_data[hd_col], endpoint_data[cod_col])
+                diff["hd_col"] = hd_col
+                diff["cod_col"] = cod_col
+
+                endpoint_data["diffs"].append(diff)
+
+        data.append(endpoint_data)
+
+    return Expectation(
+        idname="hd_cod_diff_icd",
+        status=status,
+        n_errors=len(endpoints_in_error),
+        endpoints_in_error=endpoints_in_error,
+        data=data,
+    )
 
 
 def simple_diff(string_a, string_b):
