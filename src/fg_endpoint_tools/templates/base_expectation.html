@@ -1,41 +1,46 @@
 <article
-  class="check {{ expectation.html_view['class_check_open'] }}"
-  data-state-init="{{ expectation.html_view['class_check_open']}}"
-  data-state-current="{{ expectation.html_view['class_check_open']}}"
+    class="check {{ expectation.html_view['class_check_open'] }}"
+    data-state-init="{{ expectation.html_view['class_check_open']}}"
+    data-state-current="{{ expectation.html_view['class_check_open']}}"
 >
-  <div class="check-expectation">
-    <p class="status">
-    {% if expectation.status == "all_good" %}
-      ✅
-    {% elif expectation.status == "warning" %}
-      ⚠️
-    {% elif expectation.status == "fail" %}
-      🔴
-    {% endif %}
+    <div class="check-expectation">
+        <p class="status">
+            {% if expectation.status == "all_good" %}
+                ✅
+            {% elif expectation.status == "warning" %}
+                ⚠️
+            {% elif expectation.status == "fail" %}
+                🔴
+            {% endif %}
+        </p>
+        <p class="description">
+            {% block description %}{{ expectation.idname }}{% endblock %}
+        </p>
+        <p class="error-count">
+            {{ expectation.n_errors }}
+            {% if expectation.n_errors > 1 %} errors {% else %} error {% endif %}
+        </p>
 
-    </p>
-    <p class="description">
-    {% block description %}{{ expectation.idname }}{% endblock %}
-    </p>
-    <p class="error-count">
-    {{ expectation.n_errors }}
-    {% if expectation.n_errors > 1 %}
-      errors
-    {% else %}
-      error
-    {% endif %}
-    </p>
+        <p class="action-show-details">Show details →</p>
+    </div>
 
-    <p class="action-show-details">Show details →</p>
-  </div>
+    <div class="output-preview">
+        {% if expectation.endpoints_in_error %}
+        <p>{{ expectation.endpoints_in_error | join(', ') }}</p>
+        {% endif %}
+    </div>
 
-  <div class="output-preview">
-  {% if expectation.endpoints_in_error %}
-    <p>{{ expectation.endpoints_in_error | join(', ') }}</p>
-  {% endif %}
-  </div>
-
-  <div class="output-details utils-hidden">
-  {% block output_details%}{% endblock %}
-  </div>
+    <div class="output-details utils-hidden">
+        {% if expectation.endpoints_in_error | length > 0 %}
+        <p class="download-excel">
+            <a
+                data-excel-file-b64="{{ expectation.excel_file_b64 }}"
+                data-excel-file-name="{{ file_name }}.run_{{ run_datetime }}.{{ expectation.idname }}.xlsx"
+            >
+                Download as Excel
+            </a>
+        </p>
+        {% endif %}
+        {% block output_details%}{% endblock %}
+    </div>
 </article>

@@ -12,16 +12,21 @@ Assumptions:
 - must: <endpoint>_WIDE and basic <endpoint> have the same control definition
 - should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
 - TODO should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
+- TODO must: all descendants endpoints (from `INCLUDE` recursively) must exist
+- TODO must: NAME should contain only upper case A-Z, numbers 0-9, or _ (underscore)
 """
 
-import json
+import io
+import itertools
+import typing
+from base64 import b64encode
 from dataclasses import dataclass
 from dataclasses import field
 from enum import StrEnum
 from enum import auto
-from pathlib import Path
 
 import polars as pl
+import xlsxwriter
 
 
 class Status(StrEnum):
@@ -32,11 +37,13 @@ class Status(StrEnum):
 
 @dataclass
 class Expectation:
+    idname: str
     status: Status
     n_errors: int
     endpoints_in_error: list[str]
-    data: any
+    data: typing.Any
     html_view: dict = field(default_factory=dict)
+    excel_file_b64: str = ""
 
 
 def read_definitions_excel(file_like):
@@ -47,22 +54,20 @@ def read_definitions_excel(file_like):
 def collect_report(file_like):
     dataf = read_definitions_excel(file_like)
 
-    expectations = {
-        'name_duplicates': assess_duplicates_by_name(dataf),
-        'name_any_exallc': assess_any_exallc(dataf),
-        'name_any_exmore': assess_any_exmore(dataf),
-        'code_hd_cod_same_icd': assess_hd_cod_same_icd(dataf),
-    }
-    expectations |= assess_wide_cancer_endpoints(dataf)
+    expectations = [
+        assess_duplicates_by_name(dataf),
+        assess_any_exallc(dataf),
+        assess_any_exmore(dataf),
+        assess_hd_cod_same_icd(dataf),
+    ]
+    expectations += assess_wide_cancer_endpoints(dataf)
+
+    expectations = {xx.idname : xx for xx in expectations}
 
     return {
         "summary": get_summary(dataf),
         "expectations": expectations,
     }
-
-
-def as_json(object):
-    return json.dumps(object, indent=2)
 
 
 def get_summary(dataf):
@@ -98,11 +103,15 @@ def assess_duplicates_by_name(dataf) -> Expectation:
 
     status = Status.ALL_GOOD if len(dups) == 0 else Status.FAIL
 
+    excel_b64 = write_excel_as_b64(dataf, dups)
+
     return Expectation(
+        idname="name_duplicates",
         status=status,
         n_errors=len(dups),
         endpoints_in_error=dups,
         data=dups,
+        excel_file_b64=excel_b64,
     )
 
 
@@ -111,11 +120,15 @@ def assess_any_exallc(dataf) -> Expectation:
 
     status = Status.ALL_GOOD if len(any_exallc) == 0 else Status.WARNING
 
+    excel_b64 = write_excel_as_b64(dataf, any_exallc)
+
     return Expectation(
+        idname="name_any_exallc",
         status=status,
         n_errors=len(any_exallc),
         endpoints_in_error=any_exallc,
         data=any_exallc,
+        excel_file_b64=excel_b64
     )
 
 
@@ -124,11 +137,15 @@ def assess_any_exmore(dataf) -> Expectation:
 
     status = Status.ALL_GOOD if len(any_exmore) == 0 else Status.WARNING
 
+    excel_b64 = write_excel_as_b64(dataf, any_exmore)
+
     return Expectation(
+        idname="name_any_exmore",
         status=status,
         n_errors=len(any_exmore),
         endpoints_in_error=any_exmore,
         data=any_exmore,
+        excel_file_b64=excel_b64
     )
 
 
@@ -247,48 +264,58 @@ def assess_wide_cancer_endpoints(dataf):
         different_control_definition_data, key=lambda dd: dd["wide"]
     )
 
-    expectations = {
-        "cancer_wide_has_basic_endpoint": Expectation(
+    expectations = [
+        Expectation(
+            idname="cancer_wide_has_basic_endpoint",
             status=Status.ALL_GOOD
             if len(without_basic_endpoints) == 0
             else Status.FAIL,
             n_errors=len(without_basic_endpoints),
             endpoints_in_error=[dd["wide"] for dd in without_basic_endpoints],
             data=without_basic_endpoints,
+            excel_file_b64=write_excel_as_b64(dataf, [dd["wide"] for dd in without_basic_endpoints])
         ),
-        "cancer_wide_same_cancer_definition": Expectation(
+        Expectation(
+            idname="cancer_wide_same_cancer_definition",
             status=Status.ALL_GOOD
             if len(different_cancer_definitions) == 0
             else Status.FAIL,
             n_errors=len(different_cancer_definitions),
             endpoints_in_error=[dd["wide"] for dd in different_cancer_definitions],
             data=different_cancer_definitions_data,
+            excel_file_b64=write_excel_as_b64(dataf, list(itertools.chain.from_iterable([[dd["wide"], dd["basic"]] for dd in different_cancer_definitions])))
         ),
-        "cancer_wide_have_hilmo_definition": Expectation(
+        Expectation(
+            idname="cancer_wide_have_hilmo_definition",
             status=Status.ALL_GOOD
             if len(wide_without_hilmo_definition) == 0
             else Status.FAIL,
             n_errors=len(wide_without_hilmo_definition),
             endpoints_in_error=[dd["wide"] for dd in wide_without_hilmo_definition],
             data=wide_without_hilmo_definition_data,
+            excel_file_b64=write_excel_as_b64(dataf, [dd["wide"] for dd in wide_without_hilmo_definition])
         ),
-        "cancer_wide_basic_have_no_hilmo_definition": Expectation(
+        Expectation(
+            idname="cancer_wide_basic_have_no_hilmo_definition",
             status=Status.ALL_GOOD
             if len(basic_with_hilmo_definition) == 0
             else Status.FAIL,
             n_errors=len(basic_with_hilmo_definition),
             endpoints_in_error=[dd["basic"] for dd in basic_with_hilmo_definition],
             data=basic_with_hilmo_definition_data,
+            excel_file_b64=write_excel_as_b64(dataf, [dd["basic"] for dd in basic_with_hilmo_definition])
         ),
-        "cancer_wide_same_control_definition": Expectation(
+        Expectation(
+            idname="cancer_wide_same_control_definition",
             status=Status.ALL_GOOD
             if len(different_control_definition) == 0
             else Status.FAIL,
             n_errors=len(different_control_definition),
             endpoints_in_error=[dd["wide"] for dd in different_control_definition],
             data=different_control_definition_data,
+            excel_file_b64=write_excel_as_b64(dataf, list(itertools.chain.from_iterable([[dd["wide"], dd["basic"]] for dd in different_control_definition])))
         ),
-    }
+    ]
 
     return expectations
 
@@ -425,10 +452,12 @@ def assess_hd_cod_same_icd(dataf):
         data.append(endpoint_data)
 
     return Expectation(
+        idname="code_hd_cod_same_icd",
         status=status,
         n_errors=len(endpoints_in_error),
         endpoints_in_error=endpoints_in_error,
         data=data,
+        excel_file_b64=write_excel_as_b64(dataf, endpoints_in_error)
     )
 
 
@@ -473,3 +502,15 @@ def simple_diff(string_a, string_b):
     }
 
     return diff
+
+
+def write_excel_as_b64(dataf, endpoint_names):
+    in_memory_file = io.BytesIO()
+
+    workbook = xlsxwriter.Workbook(in_memory_file)
+    dataf.filter(pl.col("NAME").is_in(endpoint_names)).write_excel(workbook)
+    workbook.close()
+
+    as_b64 = b64encode(in_memory_file.getvalue()).decode("utf-8")
+
+    return as_b64
