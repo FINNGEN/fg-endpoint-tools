@@ -1,0 +1,41 @@
+<article
+  class="check {{ expectation.html_view['class_check_open'] }}"
+  data-state-init="{{ expectation.html_view['class_check_open']}}"
+  data-state-current="{{ expectation.html_view['class_check_open']}}"
+>
+  <div class="check-expectation">
+    <p class="status">
+    {% if expectation.status == "all_good" %}
+      ✅
+    {% elif expectation.status == "warning" %}
+      ⚠️
+    {% elif expectation.status == "fail" %}
+      🔴
+    {% endif %}
+
+    </p>
+    <p class="description">
+    {% block description %}{{ expectation.idname }}{% endblock %}
+    </p>
+    <p class="error-count">
+    {{ expectation.n_errors }}
+    {% if expectation.n_errors > 1 %}
+      errors
+    {% else %}
+      error
+    {% endif %}
+    </p>
+
+    <p class="action-show-details">Show details →</p>
+  </div>
+
+  <div class="output-preview">
+  {% if expectation.endpoints_in_error %}
+    <p>{{ expectation.endpoints_in_error | join(', ') }}</p>
+  {% endif %}
+  </div>
+
+  <div class="output-details utils-hidden">
+  {% block output_details%}{% endblock %}
+  </div>
+</article>

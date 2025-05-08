@@ -1,0 +1,58 @@
+{% extends "base_expectation.html" %}
+
+{% block description %}
+  I am expecting all cancer <code>_WIDE</code> endpoints to have same control definition as their corresponding basic endpoints.
+
+{% endblock %}
+
+
+{% block output_details %}
+  <p>
+    Found <b>{{ expectation.endpoints_in_error | length }}</b> pairs of {cancer <code>_WIDE</code> endpoints &ndash; basic endpoints} with different control definition in the columns:
+    <code>CONTROL_EXCLUDE</code>,
+    <code>CONTROL_PRECONDITIONS</code>,
+    <code>CONTROL_CONDITIONS</code>.
+  </p>
+
+  {% if expectation.endpoints_in_error %}
+    {% for pair in expectation.data %}
+    <article>
+      <table>
+        <tr>
+          <th>Endpoint <code>NAME</code></th>
+          <th>Column</th>
+          <th>Value</th>
+        </tr>
+        {% for col in pair['diff_cols_wide'] %}
+          <tr>
+            <td><code>{{ pair['wide'] }}</code></td>
+            <td><code>{{ col }}</code></td>
+            <td>
+              {% if pair['cols_wide'][col] %}
+              <code>{{ pair['diffs'][col]['string_a']['prefix_common'] }}</code><!-- 
+              --><code class="highlight-bad">{{ pair['diffs'][col]['string_a']['middle_diff'] }}</code><!--
+              --><code>{{ pair['diffs'][col]['string_a']['suffix_common'] }}</code>
+              {% else %}
+              <span class="no-data"></span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td><code>{{ pair['basic'] }}</code></td>
+            <td><code>{{ col }}</code></td>
+            <td>
+              {% if pair['cols_basic'][col] %}
+              <code>{{ pair['diffs'][col]['string_b']['prefix_common'] }}</code><!-- 
+              --><code class="highlight-bad">{{ pair['diffs'][col]['string_b']['middle_diff'] }}</code><!--
+              --><code>{{ pair['diffs'][col]['string_b']['suffix_common'] }}</code>
+              {% else %}
+              <span class="no-data"></span>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}  
+      </table>
+    </article>
+    {% endfor %}
+  {% endif %}
+{% endblock %}

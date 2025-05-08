@@ -24,11 +24,11 @@ def serve_definition_checker():
     file.save(file_as_bytes)
     report = definition_checker.collect_report(file_as_bytes)
 
-    for xx in report["expectations"]:
-        if xx.status == definition_checker.Status.ALL_GOOD:
-            xx.html_view["class_check_open"] = "closed"
+    for _expectation_id, expectation in report["expectations"].items():
+        if expectation.status == definition_checker.Status.ALL_GOOD:
+            expectation.html_view["class_check_open"] = "closed"
         else:
-            xx.html_view["class_check_open"] = "preview"
+            expectation.html_view["class_check_open"] = "preview"
 
     context = {
         "file_name": file.filename,
@@ -49,7 +49,7 @@ def get_current_time() -> str:
 
 
 def status_counts(report) -> dict[definition_checker.Status, int]:
-    all_status = map(lambda xx: xx.status, report["expectations"])
+    all_status = map(lambda xx: xx.status, report["expectations"].values())
 
     counts = {ss: 0 for ss in definition_checker.Status}
     for ss in all_status:

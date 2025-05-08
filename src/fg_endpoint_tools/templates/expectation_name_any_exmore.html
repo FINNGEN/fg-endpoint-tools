@@ -1,0 +1,23 @@
+{% extends "base_expectation.html" %}
+
+{% block description %}
+  I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.
+{% endblock %}
+
+
+{% block output_details %}
+  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with a <code>NAME</code> ending with <code>_EXMORE</code>.</p>
+
+  {% if expectation.endpoints_in_error %}
+  <table>
+    <tr>
+      <th>Endpoint <code>NAME</code></th>
+    </tr>
+    {% for ee in expectation.endpoints_in_error %}
+    <tr>
+      <td><code>{{ ee }}</code></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock %}

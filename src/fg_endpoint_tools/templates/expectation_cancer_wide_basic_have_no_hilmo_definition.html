@@ -1,0 +1,35 @@
+{% extends "base_expectation.html" %}
+
+{% block description %}
+  I am expecting all basic endpoints of cancer <code>_WIDE</code> endpoints to have <i>no</i> Hilmo definition.
+{% endblock %}
+
+
+{% block output_details %}
+  <p>
+    Found <b>{{ expectation.endpoints_in_error | length }}</b> basic endpoints (counterpart of their cancer <code>_WIDE</code> endpoints) that have a definition in some of the Hilmo columns when they should not.
+  </p>
+
+  <table>
+    <tr>
+      <th>Endpoint <code>NAME</code></th>
+      {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
+      <th>Value for <code>{{ col }}</code></th>
+      {% endfor %}
+    </tr>
+    {% for dd in expectation.data %}
+    <tr>
+      <td><code>{{ dd.endpoint }}</code></td>
+      {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
+      <td>
+        {% if dd['values'][col] %}
+        <code class="highlight-bad">{{ dd['values'][col] }}</code>
+        {% else %}
+        <span class="no-data"></span>
+        {% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+    {% endfor %}
+  </table>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base_expectation.html" %}
+
+{% block description %}
+  I am expecting the values of <code>HD_ICD_*</code> to be the same as the values of <code>COD_ICD_*</code> for each endpoint.
+{% endblock %}
+
+
+{% block output_details %}
+  <p>Found <b>{{ expectation.n_errors }}</b> endpoints where the values of its <code>HD_ICD_*</code> columns is not the same as the values of its <code>COD_ICD_*</code> columns.</p>
+
+  {% if expectation.endpoints_in_error %}
+    {% for endpoint_data in expectation.data %}
+      {% for diff in endpoint_data.diffs %}
+      <article>
+        <table>
+          <tr>
+            <th>Endpoint</th>
+            <th>Column</th>
+            <th>Value</th>
+          </tr>
+          <tr>
+            <td><code>{{ endpoint_data['endpoint'] }}</code></td>
+            <td><code>{{ diff['hd_col'] }}</code></td>
+            <td>
+              {% if diff['string_a']['middle_diff'] %}
+              <code>{{ diff['string_a']['prefix_common'] }}</code><!-- 
+              --><code class="highlight-bad">{{ diff['string_a']['middle_diff'] }}</code><!--
+              --><code>{{ diff['string_a']['suffix_common'] }}</code>
+              {% else %}
+              <span class="no-data"></span>
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <td><code>{{ endpoint_data['endpoint'] }}</code></td>
+            <td><code>{{ diff['cod_col'] }}</code></td>
+            <td>
+              {% if diff['string_b']['middle_diff'] %}
+              <code>{{ diff['string_b']['prefix_common'] }}</code><!-- 
+              --><code class="highlight-bad">{{ diff['string_b']['middle_diff'] }}</code><!--
+              --><code>{{ diff['string_b']['suffix_common'] }}</code>
+              {% else %}
+              <span class="no-data"></span>
+              {% endif %}
+            </td>
+          </tr>
+        </table>
+      </article>
+      {% endfor %}
+    {% endfor %}
+  {% endif %}
+{% endblock %}

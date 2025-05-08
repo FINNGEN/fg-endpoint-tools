@@ -330,345 +330,38 @@ Endpoint Definition Checker
 </article>
 
 
-{#
-NOTE(Vincent 2025-04-14) Not super happy on how the data and HTML are laid out here as the description
-and the output-details of a single expectation are not close to each other in the code.
-Though for now this is the way I chose to do it because I can write a single <article> and iterate over it,
-leading to no duplicate code for the HTML/soon-JS.
-#}
-{% for expectation in expectations %}
-<article
-  class="check {{ expectation.html_view['class_check_open'] }}"
-  data-state-init="{{ expectation.html_view['class_check_open']}}"
-  data-state-current="{{ expectation.html_view['class_check_open']}}"
->
-  <div class="check-expectation">
-    <p class="status">
-    {% if expectation.status == "all_good" %}
-      ✅
-    {% elif expectation.status == "warning" %}
-      ⚠️
-    {% elif expectation.status == "fail" %}
-      🔴
-    {% endif %}
+<h2>Endpoint naming</h2>
+{% set expectation = expectations.name_duplicates %}
+{% include 'expectation_name_duplicates.html' %}
 
-    </p>
-    <p class="description">
-    {% if expectation.idname == "duplicates" %}
-      I am expecting all the endpoints to have a different <code>NAME</code>.
-    {% elif expectation.idname == "any_exallc" %}
-      I am expecting that no endpoints <code>NAME</code> end with <code>_EXALLC</code>.
-    {% elif expectation.idname == "any_exmore" %}
-      I am expecting that no endpoints <code>NAME</code> end with <code>_EXMORE</code>.
-    {% elif expectation.idname == "hd_cod_diff_icd" %}
-      I am expecting the values of <code>HD_ICD_*</code> to be the same as the values of <code>COD_ICD_*</code> for each endpoint.
-    {% elif expectation.idname == "cancer_wide_has_basic_endpoint" %}
-      I am expecting all cancer <code>_WIDE</code> endpoints to have a corresponding basic endpoint (i.e. without the <code>_WIDE</code> suffix).
-    {% elif expectation.idname == "cancer_wide_same_cancer_definition" %}
-      I am expecting all cancer <code>_WIDE</code> endpoints to have the same cancer definition as their basic endpoint.
-    {% elif expectation.idname == "cancer_wide_have_hilmo_definition" %}
-      I am expecting all cancer <code>_WIDE</code> endpoints to have a Hilmo definition.
-    {% elif expectation.idname == "cancer_wide_basic_have_no_hilmo_definition" %}
-      I am expecting all basic endpoints of cancer <code>_WIDE</code> endpoints to have <i>no</i> Hilmo definition.
-    {% elif expectation.idname == "cancer_wide_same_control_definition" %}
-      I am expecting all cancer <code>_WIDE</code> endpoints to have same control definition as their corresponding basic endpoints.
-    {% else %}
-      {{ expectation.idname }}
-    {% endif %}
+{% set expectation = expectations.name_any_exallc %}
+{% include 'expectation_name_any_exallc.html' %}
 
-    </p>
-    <p class="error-count">
-    {{ expectation.n_errors }}
-    {% if expectation.n_errors > 1 %}
-      errors
-    {% else %}
-      error
-    {% endif %}
-    </p>
-
-    <p class="action-show-details">Show details →</p>
-  </div>
-
-  <div class="output-preview">
-  {% if expectation.endpoints_in_error %}
-    <p>{{ expectation.endpoints_in_error | join(', ') }}</p>
-  {% endif %}
-  </div>
-
-  <div class="output-details utils-hidden">
-  {% if expectation.idname == "duplicates" %}
-    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with duplicate <code>NAME</code>.</p>
-
-    {% if expectation.endpoints_in_error %}
-    <table>
-      <tr>
-        <th>Endpoint <code>NAME</code></th>
-      </tr>
-      {% for ee in expectation.endpoints_in_error %}
-      <tr>
-        <td><code>{{ ee }}</code></td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
+{% set expectation = expectations.name_any_exmore %}
+{% include 'expectation_name_any_exmore.html' %}
 
 
-  {% elif expectation.idname == "any_exallc" %}
-    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with a <code>NAME</code> ending with <code>_EXALLC</code>.</p>
-
-    {% if expectation.endpoints_in_error %}
-    <table>
-      <tr>
-        <th>Endpoint <code>NAME</code></th>
-      </tr>
-      {% for ee in expectation.endpoints_in_error %}
-      <tr>
-        <td><code>{{ ee }}</code></td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
-
-  {% elif expectation.idname == "any_exmore" %}
-    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with a <code>NAME</code> ending with <code>_EXMORE</code>.</p>
-
-    {% if expectation.endpoints_in_error %}
-    <table>
-      <tr>
-        <th>Endpoint <code>NAME</code></th>
-      </tr>
-      {% for ee in expectation.endpoints_in_error %}
-      <tr>
-        <td><code>{{ ee }}</code></td>
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
+<h2>Definition codes</h2>
+{% set expectation = expectations.code_hd_cod_same_icd %}
+{% include 'expectation_code_hd_cod_same_icd.html' %}
 
 
-  {% elif expectation.idname == "hd_cod_diff_icd" %}
-    <p>Found <b>{{ expectation.n_errors }}</b> endpoints where the values of its <code>HD_ICD_*</code> columns is not the same as the values of its <code>COD_ICD_*</code> columns.</p>
+<h2>Cancer <code>_WIDE</code></h2>
+{% set expectation = expectations.cancer_wide_has_basic_endpoint %}
+{% include 'expectation_cancer_wide_has_basic_endpoint.html' %}
 
-    {% if expectation.endpoints_in_error %}
-      {% for endpoint_data in expectation.data %}
-        {% for diff in endpoint_data.diffs %}
-        <article>
-          <table>
-            <tr>
-              <th>Endpoint</th>
-              <th>Column</th>
-              <th>Value</th>
-            </tr>
-            <tr>
-              <td><code>{{ endpoint_data['endpoint'] }}</code></td>
-              <td><code>{{ diff['hd_col'] }}</code></td>
-              <td>
-                {% if diff['string_a']['middle_diff'] %}
-                <code>{{ diff['string_a']['prefix_common'] }}</code><!-- 
-                --><code class="highlight-bad">{{ diff['string_a']['middle_diff'] }}</code><!--
-                --><code>{{ diff['string_a']['suffix_common'] }}</code>
-                {% else %}
-                <span class="no-data"></span>
-                {% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td><code>{{ endpoint_data['endpoint'] }}</code></td>
-              <td><code>{{ diff['cod_col'] }}</code></td>
-              <td>
-                {% if diff['string_b']['middle_diff'] %}
-                <code>{{ diff['string_b']['prefix_common'] }}</code><!-- 
-                --><code class="highlight-bad">{{ diff['string_b']['middle_diff'] }}</code><!--
-                --><code>{{ diff['string_b']['suffix_common'] }}</code>
-                {% else %}
-                <span class="no-data"></span>
-                {% endif %}
-              </td>
-            </tr>
-          </table>
-        </article>
-        {% endfor %}
-      {% endfor %}
-    {% endif %}
+{% set expectation = expectations.cancer_wide_same_cancer_definition %}
+{% include 'expectation_cancer_wide_same_cancer_definition.html' %}
 
+{% set expectation = expectations.cancer_wide_have_hilmo_definition %}
+{% include 'expectation_cancer_wide_have_hilmo_definition.html' %}
 
-  {% elif expectation.idname == "cancer_wide_has_basic_endpoint" %}
-    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>_WIDE</code> endpoints without a corresponting basic endpoints.</p>
+{% set expectation = expectations.cancer_wide_basic_have_no_hilmo_definition %}
+{% include 'expectation_cancer_wide_basic_have_no_hilmo_definition.html' %}
 
-    {% if expectation.endpoints_in_error %}
-      <table>
-        <tr>
-          <th>Cancer <code>_WIDE</code> endpoint</th>
-          <th>Corresponding basic endpoint</th>
-        </tr>
-        {% for pair in expectation.data %}
-        <tr>
-          <td><code>{{ pair['wide'] }}</code></td>
-          <td><code>{{ pair['basic'] }}</code> does not exist</td>
-        </tr>
-        {% endfor %}
-      </table>
-    {% endif %}
+{% set expectation = expectations.cancer_wide_same_control_definition %}
+{% include 'expectation_cancer_wide_same_control_definition.html' %}
 
-  {% elif expectation.idname == "cancer_wide_same_cancer_definition" %}
-    <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> pairs of {cancer <code>_WIDE</code> endpoint &ndash; basic endpoint} with a different cancer definition in the columns <code>CANC_TOPO</code>, <code>CANC_TOPO_EXCL</code>, <code>CANC_MORPH</code>, <code>CANC_MORPH_EXCL</code>, <code>CANC_BEHAV</code>.</p>
-
-    {# TODO(Vincent 2025-04-23) This table generation should be refactored since we use it for a couple of expectations. #}
-    {% if expectation.endpoints_in_error %}
-      {% for pair in expectation.data %}
-      <article>
-        <table>
-          <tr>
-            <th>Endpoint <code>NAME</code></th>
-            <th>Column</th>
-            <th>Value</th>
-          </tr>
-          {% for col in pair['diff_cols_wide'] %}
-            <tr>
-              <td><code>{{ pair['wide'] }}</code></td>
-              <td><code>{{ col }}</code></td>
-              <td>
-                {% if pair['cols_wide'][col] %}
-                <code>{{ pair['diffs'][col]['string_a']['prefix_common'] }}</code><!-- 
-                --><code class="highlight-bad">{{ pair['diffs'][col]['string_a']['middle_diff'] }}</code><!--
-                --><code>{{ pair['diffs'][col]['string_a']['suffix_common'] }}</code>
-                {% else %}
-                <span class="no-data"></span>
-                {% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td><code>{{ pair['basic'] }}</code></td>
-              <td><code>{{ col }}</code></td>
-              <td>
-                {% if pair['cols_basic'][col] %}
-                <code>{{ pair['diffs'][col]['string_b']['prefix_common'] }}</code><!-- 
-                --><code class="highlight-bad">{{ pair['diffs'][col]['string_b']['middle_diff'] }}</code><!--
-                --><code>{{ pair['diffs'][col]['string_b']['suffix_common'] }}</code>
-                {% else %}
-                <span class="no-data"></span>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}  
-        </table>
-      </article>
-      {% endfor %}
-    {% endif %}
-    
-  {% elif expectation.idname == "cancer_wide_have_hilmo_definition" %}
-    <p>
-      Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>_WIDE</code> endpoints without a Hilmo definition in any of the columns:
-      <code>HD_ICD_10</code>, <code>HD_ICD_9</code>, <code>HD_ICD_8</code>, <code>HD_ICD_10_EXCL</code>, <code>HD_ICD_9_EXCL</code>, <code>HD_ICD_8_EXCL</code>.
-    </p>
-
-    {% if expectation.endpoints_in_error %}
-    <table>
-      <tr>
-        <th>Endpoint <code>NAME</code></th>
-        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
-        <th>Value for <code>{{ col }}</code></th>
-        {% endfor %}
-      </tr>
-      {% for dd in expectation.data %}
-      <tr>
-        <td><code>{{ dd.endpoint }}</code></td>
-        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
-        <td>
-          {% if dd['values'][col] %}
-          <code>{{ dd['values'][col] }}</code>
-          {% else %}
-          <span class="no-data"></span>
-          {% endif %}
-        </td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
-    {% endif %}
-
-  {% elif expectation.idname == "cancer_wide_basic_have_no_hilmo_definition"%}
-    <p>
-      Found <b>{{ expectation.endpoints_in_error | length }}</b> basic endpoints (counterpart of their cancer <code>_WIDE</code> endpoints) that have a definition in some of the Hilmo columns when they should not.
-    </p>
-
-    <table>
-      <tr>
-        <th>Endpoint <code>NAME</code></th>
-        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
-        <th>Value for <code>{{ col }}</code></th>
-        {% endfor %}
-      </tr>
-      {% for dd in expectation.data %}
-      <tr>
-        <td><code>{{ dd.endpoint }}</code></td>
-        {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
-        <td>
-          {% if dd['values'][col] %}
-          <code class="highlight-bad">{{ dd['values'][col] }}</code>
-          {% else %}
-          <span class="no-data"></span>
-          {% endif %}
-        </td>
-        {% endfor %}
-      </tr>
-      {% endfor %}
-    </table>
-
-  {% elif expectation.idname == "cancer_wide_same_control_definition" %}
-    <p>
-      Found <b>{{ expectation.endpoints_in_error | length }}</b> pairs of {cancer <code>_WIDE</code> endpoints &ndash; basic endpoints} with different control definition in the columns:
-      <code>CONTROL_EXCLUDE</code>,
-      <code>CONTROL_PRECONDITIONS</code>,
-      <code>CONTROL_CONDITIONS</code>.
-    </p>
-
-    {% if expectation.endpoints_in_error %}
-      {% for pair in expectation.data %}
-      <article>
-        <table>
-          <tr>
-            <th>Endpoint <code>NAME</code></th>
-            <th>Column</th>
-            <th>Value</th>
-          </tr>
-          {% for col in pair['diff_cols_wide'] %}
-            <tr>
-              <td><code>{{ pair['wide'] }}</code></td>
-              <td><code>{{ col }}</code></td>
-              <td>
-                {% if pair['cols_wide'][col] %}
-                <code>{{ pair['diffs'][col]['string_a']['prefix_common'] }}</code><!-- 
-                --><code class="highlight-bad">{{ pair['diffs'][col]['string_a']['middle_diff'] }}</code><!--
-                --><code>{{ pair['diffs'][col]['string_a']['suffix_common'] }}</code>
-                {% else %}
-                <span class="no-data"></span>
-                {% endif %}
-              </td>
-            </tr>
-            <tr>
-              <td><code>{{ pair['basic'] }}</code></td>
-              <td><code>{{ col }}</code></td>
-              <td>
-                {% if pair['cols_basic'][col] %}
-                <code>{{ pair['diffs'][col]['string_b']['prefix_common'] }}</code><!-- 
-                --><code class="highlight-bad">{{ pair['diffs'][col]['string_b']['middle_diff'] }}</code><!--
-                --><code>{{ pair['diffs'][col]['string_b']['suffix_common'] }}</code>
-                {% else %}
-                <span class="no-data"></span>
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}  
-        </table>
-      </article>
-      {% endfor %}
-    {% endif %}
-
-  {% endif %}
-  </div>
-</article>
-{% endfor %}
 </main>
 
 <script>

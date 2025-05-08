@@ -32,7 +32,6 @@ class Status(StrEnum):
 
 @dataclass
 class Expectation:
-    idname: str
     status: Status
     n_errors: int
     endpoints_in_error: list[str]
@@ -48,13 +47,13 @@ def read_definitions_excel(file_like):
 def collect_report(file_like):
     dataf = read_definitions_excel(file_like)
 
-    expectations = [
-        assess_duplicates_by_name(dataf),
-        assess_any_exallc(dataf),
-        assess_any_exmore(dataf),
-        assess_hd_cod_same_icd(dataf),
-    ]
-    expectations += assess_wide_cancer_endpoints(dataf)
+    expectations = {
+        'name_duplicates': assess_duplicates_by_name(dataf),
+        'name_any_exallc': assess_any_exallc(dataf),
+        'name_any_exmore': assess_any_exmore(dataf),
+        'code_hd_cod_same_icd': assess_hd_cod_same_icd(dataf),
+    }
+    expectations |= assess_wide_cancer_endpoints(dataf)
 
     return {
         "summary": get_summary(dataf),
@@ -100,7 +99,6 @@ def assess_duplicates_by_name(dataf) -> Expectation:
     status = Status.ALL_GOOD if len(dups) == 0 else Status.FAIL
 
     return Expectation(
-        idname="duplicates",
         status=status,
         n_errors=len(dups),
         endpoints_in_error=dups,
@@ -114,7 +112,6 @@ def assess_any_exallc(dataf) -> Expectation:
     status = Status.ALL_GOOD if len(any_exallc) == 0 else Status.WARNING
 
     return Expectation(
-        idname="any_exallc",
         status=status,
         n_errors=len(any_exallc),
         endpoints_in_error=any_exallc,
@@ -128,7 +125,6 @@ def assess_any_exmore(dataf) -> Expectation:
     status = Status.ALL_GOOD if len(any_exmore) == 0 else Status.WARNING
 
     return Expectation(
-        idname="any_exmore",
         status=status,
         n_errors=len(any_exmore),
         endpoints_in_error=any_exmore,
@@ -251,9 +247,8 @@ def assess_wide_cancer_endpoints(dataf):
         different_control_definition_data, key=lambda dd: dd["wide"]
     )
 
-    expectations = [
-        Expectation(
-            idname="cancer_wide_has_basic_endpoint",
+    expectations = {
+        "cancer_wide_has_basic_endpoint": Expectation(
             status=Status.ALL_GOOD
             if len(without_basic_endpoints) == 0
             else Status.FAIL,
@@ -261,8 +256,7 @@ def assess_wide_cancer_endpoints(dataf):
             endpoints_in_error=[dd["wide"] for dd in without_basic_endpoints],
             data=without_basic_endpoints,
         ),
-        Expectation(
-            idname="cancer_wide_same_cancer_definition",
+        "cancer_wide_same_cancer_definition": Expectation(
             status=Status.ALL_GOOD
             if len(different_cancer_definitions) == 0
             else Status.FAIL,
@@ -270,8 +264,7 @@ def assess_wide_cancer_endpoints(dataf):
             endpoints_in_error=[dd["wide"] for dd in different_cancer_definitions],
             data=different_cancer_definitions_data,
         ),
-        Expectation(
-            idname="cancer_wide_have_hilmo_definition",
+        "cancer_wide_have_hilmo_definition": Expectation(
             status=Status.ALL_GOOD
             if len(wide_without_hilmo_definition) == 0
             else Status.FAIL,
@@ -279,8 +272,7 @@ def assess_wide_cancer_endpoints(dataf):
             endpoints_in_error=[dd["wide"] for dd in wide_without_hilmo_definition],
             data=wide_without_hilmo_definition_data,
         ),
-        Expectation(
-            idname="cancer_wide_basic_have_no_hilmo_definition",
+        "cancer_wide_basic_have_no_hilmo_definition": Expectation(
             status=Status.ALL_GOOD
             if len(basic_with_hilmo_definition) == 0
             else Status.FAIL,
@@ -288,8 +280,7 @@ def assess_wide_cancer_endpoints(dataf):
             endpoints_in_error=[dd["basic"] for dd in basic_with_hilmo_definition],
             data=basic_with_hilmo_definition_data,
         ),
-        Expectation(
-            idname="cancer_wide_same_control_definition",
+        "cancer_wide_same_control_definition": Expectation(
             status=Status.ALL_GOOD
             if len(different_control_definition) == 0
             else Status.FAIL,
@@ -297,7 +288,7 @@ def assess_wide_cancer_endpoints(dataf):
             endpoints_in_error=[dd["wide"] for dd in different_control_definition],
             data=different_control_definition_data,
         ),
-    ]
+    }
 
     return expectations
 
@@ -434,7 +425,6 @@ def assess_hd_cod_same_icd(dataf):
         data.append(endpoint_data)
 
     return Expectation(
-        idname="hd_cod_diff_icd",
         status=status,
         n_errors=len(endpoints_in_error),
         endpoints_in_error=endpoints_in_error,
