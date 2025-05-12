@@ -2,6 +2,7 @@ from datetime import datetime
 from io import BytesIO
 
 from flask import Flask
+from flask import redirect
 from flask import render_template
 from flask import request
 
@@ -10,14 +11,17 @@ from . import definition_checker
 
 app = Flask(__name__)
 
+@app.route("/")
+def redir():
+    return redirect("/definition-checker/")
 
 @app.route("/definition-checker/", methods=["GET"])
-def serve_home():
+def serve_definition_checker_home():
     return render_template("home.html")
 
 
 @app.route("/definition-checker/", methods=["POST"])
-def serve_definition_checker():
+def serve_definition_checker_report():
     file = request.files["file"]
 
     file_as_bytes = BytesIO()
