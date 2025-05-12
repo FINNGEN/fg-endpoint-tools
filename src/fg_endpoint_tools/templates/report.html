@@ -335,35 +335,26 @@
     </article>
 
     <h2>Endpoint naming</h2>
-    {% set expectation = expectations.name_duplicates %}
     {% include 'expectation_name_duplicates.html' %}
 
-    {% set expectation = expectations.name_any_exallc %}
     {% include 'expectation_name_any_exallc.html' %}
 
-    {% set expectation = expectations.name_any_exmore %}
     {% include 'expectation_name_any_exmore.html' %}
 
 
     <h2>Definition codes</h2>
-    {% set expectation = expectations.code_hd_cod_same_icd %}
     {% include 'expectation_code_hd_cod_same_icd.html' %}
 
 
     <h2>Cancer <code>_WIDE</code></h2>
-    {% set expectation = expectations.cancer_wide_has_basic_endpoint %}
     {% include 'expectation_cancer_wide_has_basic_endpoint.html' %}
 
-    {% set expectation = expectations.cancer_wide_same_cancer_definition %}
     {% include 'expectation_cancer_wide_same_cancer_definition.html' %}
 
-    {% set expectation = expectations.cancer_wide_have_hilmo_definition %}
     {% include 'expectation_cancer_wide_have_hilmo_definition.html' %}
 
-    {% set expectation = expectations.cancer_wide_basic_have_no_hilmo_definition %}
     {% include 'expectation_cancer_wide_basic_have_no_hilmo_definition.html' %}
 
-    {% set expectation = expectations.cancer_wide_same_control_definition %}
     {% include 'expectation_cancer_wide_same_control_definition.html' %}
 </main>
 

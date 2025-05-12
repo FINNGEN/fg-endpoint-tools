@@ -1,5 +1,7 @@
 {% extends "base_expectation.html" %}
 
+{% set expectation = expectations.name_duplicates %}
+
 {% block description %}
   I am expecting all the endpoints to have a different <code>NAME</code>.
 {% endblock %}

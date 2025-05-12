@@ -1,5 +1,7 @@
 {% extends "base_expectation.html" %}
 
+{% set expectation = expectations.cancer_wide_same_cancer_definition %}
+
 {% block description %}
   I am expecting all cancer <code>_WIDE</code> endpoints to have the same cancer definition as their basic endpoint.
 {% endblock %}

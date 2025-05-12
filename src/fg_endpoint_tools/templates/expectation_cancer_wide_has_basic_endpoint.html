@@ -1,5 +1,7 @@
 {% extends "base_expectation.html" %}
 
+{% set expectation = expectations.cancer_wide_has_basic_endpoint %}
+
 {% block description %}
   I am expecting all cancer <code>_WIDE</code> endpoints to have a corresponding basic endpoint (i.e. without the <code>_WIDE</code> suffix).
 {% endblock %}

@@ -1,5 +1,7 @@
 {% extends "base_expectation.html" %}
 
+{% set expectation = expectations.code_hd_cod_same_icd %}
+
 {% block description %}
   I am expecting the values of <code>HD_ICD_*</code> to be the same as the values of <code>COD_ICD_*</code> for each endpoint.
 {% endblock %}
