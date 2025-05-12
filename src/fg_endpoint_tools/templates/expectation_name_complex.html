@@ -1,0 +1,37 @@
+{% extends "base_expectation.html" %}
+
+{% set expectation = expectations.complex_names %}
+
+{% block description %}
+  I am expecting all the endpoints to have a simple <code>NAME</code>.
+{% endblock %}
+
+{% block output_details %}
+  <p>
+    Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with a complex <code>NAME</code>, i.e. made of something other than uppercase letters (<code>A-Z</code>), numbers (<code>0-9</code>), and underscore (<code>_</code>).
+  </p>
+
+  {% if expectation.endpoints_in_error %}
+  <table>
+    <tr>
+      <th>Endpoint <code>NAME</code></th>
+    </tr>
+    {% for dd in expectation.data %}
+    <tr>
+      <td><code>
+      {% for part in dd.name_annotated %}<!--
+        -->{% if part.is_complex %}<!--
+          --><span class="highlight-bad"><!--
+        -->{% else %}<!--
+          --><span><!--
+        -->{% endif %}<!--
+
+        -->{{ part.string }}<!--
+        --></span><!--
+      -->{% endfor %}
+      </code></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock %}

@@ -11,9 +11,11 @@ from . import definition_checker
 
 app = Flask(__name__)
 
+
 @app.route("/")
 def redir():
     return redirect("/definition-checker/")
+
 
 @app.route("/definition-checker/", methods=["GET"])
 def serve_definition_checker_home():

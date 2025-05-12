@@ -11,13 +11,14 @@ Assumptions:
   . basic has no definition in Hilmo
 - must: <endpoint>_WIDE and basic <endpoint> have the same control definition
 - should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
+- must: NAME should contain only upper case A-Z, numbers 0-9, or _ (underscore)
 - TODO should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
 - TODO must: all descendants endpoints (from `INCLUDE` recursively) must exist
-- TODO must: NAME should contain only upper case A-Z, numbers 0-9, or _ (underscore)
 """
 
 import io
 import itertools
+import re
 import typing
 from base64 import b64encode
 from dataclasses import dataclass
@@ -56,13 +57,14 @@ def collect_report(file_like):
 
     expectations = [
         assess_duplicates_by_name(dataf),
+        assess_simple_names(dataf),
         assess_any_exallc(dataf),
         assess_any_exmore(dataf),
         assess_hd_cod_same_icd(dataf),
     ]
     expectations += assess_wide_cancer_endpoints(dataf)
 
-    expectations = {xx.idname : xx for xx in expectations}
+    expectations = {xx.idname: xx for xx in expectations}
 
     return {
         "summary": get_summary(dataf),
@@ -115,6 +117,62 @@ def assess_duplicates_by_name(dataf) -> Expectation:
     )
 
 
+def assess_simple_names(dataf) -> Expectation:
+    names = dataf.get_column("NAME")
+
+    # NOTE(Vincent 2025-05-12)  Must be a regex compatible in Rust and Python,
+    # as it will be used in polars, which uses Rust regex crate, and also by the
+    # python re modlue.
+    # For the Rust regex syntax, see: https://docs.rs/regex/latest/regex/#syntax
+    #
+    # NOTE(Vincent 2025-05-12)  Using parentheses around the regex to make the
+    # non-matching parts appear when using python `re.split`. The parentheses do not
+    # affect the yes/no matching in both Rust and Python regex systems.
+    regex_complex_names = "([^A-Z0-9_])"
+    regex_python_compiled = re.compile(regex_complex_names)
+
+    complex_names = (
+        names.filter(
+            names.str.contains(regex_complex_names)
+        )
+        .unique()
+        .to_list()
+    )
+
+    complex_names = sorted(complex_names)
+
+    data = []
+    for name in complex_names:
+        name_annotated = []
+
+        parts = re.split(regex_python_compiled, name)
+        for part in parts:
+            is_complex = re.fullmatch(regex_python_compiled, part)
+            name_annotated.append({
+                "string": part,
+                "is_complex": is_complex
+            })
+
+        data.append({
+            "endpoint": name,
+            "name_annotated": name_annotated
+        })
+
+
+    status = Status.ALL_GOOD if len(complex_names) == 0 else Status.FAIL
+
+    excel_b64 = write_excel_as_b64(dataf, complex_names)
+
+    return Expectation(
+        idname="complex_names",
+        status=status,
+        n_errors=len(complex_names),
+        endpoints_in_error=complex_names,
+        data=data,
+        excel_file_b64=excel_b64,
+    )
+
+
 def assess_any_exallc(dataf) -> Expectation:
     any_exallc = find_any_with_suffix(dataf, "_EXALLC")
 
@@ -128,7 +186,7 @@ def assess_any_exallc(dataf) -> Expectation:
         n_errors=len(any_exallc),
         endpoints_in_error=any_exallc,
         data=any_exallc,
-        excel_file_b64=excel_b64
+        excel_file_b64=excel_b64,
     )
 
 
@@ -145,7 +203,7 @@ def assess_any_exmore(dataf) -> Expectation:
         n_errors=len(any_exmore),
         endpoints_in_error=any_exmore,
         data=any_exmore,
-        excel_file_b64=excel_b64
+        excel_file_b64=excel_b64,
     )
 
 
@@ -273,7 +331,9 @@ def assess_wide_cancer_endpoints(dataf):
             n_errors=len(without_basic_endpoints),
             endpoints_in_error=[dd["wide"] for dd in without_basic_endpoints],
             data=without_basic_endpoints,
-            excel_file_b64=write_excel_as_b64(dataf, [dd["wide"] for dd in without_basic_endpoints])
+            excel_file_b64=write_excel_as_b64(
+                dataf, [dd["wide"] for dd in without_basic_endpoints]
+            ),
         ),
         Expectation(
             idname="cancer_wide_same_cancer_definition",
@@ -283,7 +343,17 @@ def assess_wide_cancer_endpoints(dataf):
             n_errors=len(different_cancer_definitions),
             endpoints_in_error=[dd["wide"] for dd in different_cancer_definitions],
             data=different_cancer_definitions_data,
-            excel_file_b64=write_excel_as_b64(dataf, list(itertools.chain.from_iterable([[dd["wide"], dd["basic"]] for dd in different_cancer_definitions])))
+            excel_file_b64=write_excel_as_b64(
+                dataf,
+                list(
+                    itertools.chain.from_iterable(
+                        [
+                            [dd["wide"], dd["basic"]]
+                            for dd in different_cancer_definitions
+                        ]
+                    )
+                ),
+            ),
         ),
         Expectation(
             idname="cancer_wide_have_hilmo_definition",
@@ -293,7 +363,9 @@ def assess_wide_cancer_endpoints(dataf):
             n_errors=len(wide_without_hilmo_definition),
             endpoints_in_error=[dd["wide"] for dd in wide_without_hilmo_definition],
             data=wide_without_hilmo_definition_data,
-            excel_file_b64=write_excel_as_b64(dataf, [dd["wide"] for dd in wide_without_hilmo_definition])
+            excel_file_b64=write_excel_as_b64(
+                dataf, [dd["wide"] for dd in wide_without_hilmo_definition]
+            ),
         ),
         Expectation(
             idname="cancer_wide_basic_have_no_hilmo_definition",
@@ -303,7 +375,9 @@ def assess_wide_cancer_endpoints(dataf):
             n_errors=len(basic_with_hilmo_definition),
             endpoints_in_error=[dd["basic"] for dd in basic_with_hilmo_definition],
             data=basic_with_hilmo_definition_data,
-            excel_file_b64=write_excel_as_b64(dataf, [dd["basic"] for dd in basic_with_hilmo_definition])
+            excel_file_b64=write_excel_as_b64(
+                dataf, [dd["basic"] for dd in basic_with_hilmo_definition]
+            ),
         ),
         Expectation(
             idname="cancer_wide_same_control_definition",
@@ -313,7 +387,17 @@ def assess_wide_cancer_endpoints(dataf):
             n_errors=len(different_control_definition),
             endpoints_in_error=[dd["wide"] for dd in different_control_definition],
             data=different_control_definition_data,
-            excel_file_b64=write_excel_as_b64(dataf, list(itertools.chain.from_iterable([[dd["wide"], dd["basic"]] for dd in different_control_definition])))
+            excel_file_b64=write_excel_as_b64(
+                dataf,
+                list(
+                    itertools.chain.from_iterable(
+                        [
+                            [dd["wide"], dd["basic"]]
+                            for dd in different_control_definition
+                        ]
+                    )
+                ),
+            ),
         ),
     ]
 
@@ -457,7 +541,7 @@ def assess_hd_cod_same_icd(dataf):
         n_errors=len(endpoints_in_error),
         endpoints_in_error=endpoints_in_error,
         data=data,
-        excel_file_b64=write_excel_as_b64(dataf, endpoints_in_error)
+        excel_file_b64=write_excel_as_b64(dataf, endpoints_in_error),
     )
 
 
