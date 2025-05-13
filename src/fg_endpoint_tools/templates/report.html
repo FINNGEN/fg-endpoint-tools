@@ -65,15 +65,29 @@
         }
 
         /* ~~~ SECTION: Metadata ~~~ */
+        .report-metadata {
+            display: flex;
+            flex-wrap: wrap;
+            column-gap: 4em;
+
+            margin: 2rem 1rem 4em;
+        }
+
         .metadata {
             display: grid;
             grid-template-columns: repeat(2, minmax(auto, max-content));
             column-gap: 0.8rem;
 
             max-width: 120ch;
-            margin: 3rem 1rem;
+            margin-top: 2em;
 
             font-weight: 500;
+
+
+            & h2 {
+                margin: 0;
+                font-size: 1rem;
+            }
 
             & p {
                 margin: 0;
@@ -100,29 +114,23 @@
                 border-bottom: 1px solid #e6e6e6;
             }
 
+            & .metadata-item .omit {
+                display: flex;
+            }
+
+            & .metadata-item .omit summary {
+                margin-left: 1ch;
+                border-bottom: 1px solid #515151;
+                cursor: pointer;
+            }
+
+
             & .metadata-columns-content {
                 max-width: fit-content;
 
                 display: grid;
                 grid-template-columns: auto auto;
                 column-gap: 0.5rem;
-            }
-
-            & .metadata-columns-content .row {
-                display: grid;
-                grid-column: 1 / -1;
-                grid-template-columns: subgrid;
-
-                padding: 0;
-            }
-
-            & .metadata-columns-content .row:not(:first-child) {
-                padding-top: 0.25rem;
-            }
-
-            & .metadata-columns-content .row:not(:last-child) {
-                padding-bottom: 0.25rem;
-                border-bottom: 1px solid #e6e6e6;
             }
 
             & .actions-quick-report {
@@ -252,6 +260,20 @@
             }
         }
 
+        /* ~~~ SECTION-LESS ~~~ */
+        dialog {
+            padding: 1em 2em;    
+
+            & button:first-child {
+                position: sticky;
+                top: 0;
+            
+                width: 100%;
+
+                margin-bottom: 1em;
+            }
+        }
+
         /* ~~~ UTILITY CLASSES ~~~ */
         .no-data {
             color: #999;
@@ -282,58 +304,103 @@
 <header>Endpoint Definition Checker</header>
 
 <main>
-    <article class="metadata">
-        <div class="metadata-item">
-            <p>File</p>
-            <p class="utils-break-word">{{ file_name }}</p>
-        </div>
+    <div class="report-metadata">
+        <article class="metadata">
+            <h2>Report</h2>
+            <div class="metadata-item">
+                <p>File</p>
+                <p class="utils-break-word">{{ file_name }}</p>
+            </div>
 
-        <div class="metadata-item">
-            <p>Size</p>
-            <p>{{ summary.n_columns }} columns × {{ summary.n_rows }} rows</p>
-        </div>
+            <div class="metadata-item">
+                <p>Size</p>
+                <p>{{ summary.n_columns }} columns × {{ summary.n_rows }} rows</p>
+            </div>
 
-        <div class="metadata-item">
-            <p>Metadata columns</p>
-            <div class="metadata-columns-content">
-                <div class="row">
-                    <p>Control definitions?</p>
-                    <p>
-                        {% if summary.has_control_definitions %}
-                            Yes
-                        {% else %}
-                            No
-                        {% endif %}
-                    </p>
-                </div>
-
-                <div class="row">
-                    <p>Core / non-core info?</p>
-                    <p>
-                        {% if summary.has_core_info %}
-                            Yes
-                        {% else %}
-                            No
-                        {% endif %}
-                    </p>
+            <div class="metadata-item">
+                <p>Statuses</p>
+                <div class="actions-quick-report">
+                    <p><span>✅</span><span>{{ status_counts.all_good }}</span></p>
+                    <p><span>⚠️</span><span>{{ status_counts.warning }}</span></p>
+                    <p><span>🔴</span><span>{{ status_counts.fail }}</span></p>
                 </div>
             </div>
-        </div>
 
-        <div class="metadata-item">
-            <p>Quick report</p>
-            <div class="actions-quick-report">
-                <p><span>✅</span><span>{{ status_counts.all_good }}</span></p>
-                <p><span>⚠️</span><span>{{ status_counts.warning }}</span></p>
-                <p><span>🔴</span><span>{{ status_counts.fail }}</span></p>
+            <div class="metadata-item">
+                <p>Checked at</p>
+                <p id="report-time">{{ run_datetime }}</p>
             </div>
-        </div>
+        </article>
 
-        <div class="metadata-item">
-            <p>Checked at</p>
-            <p id="report-time">{{ run_datetime }}</p>
-        </div>
-    </article>
+        <article class="metadata">
+            <h2>Metadata</h2>
+            <div class="metadata-item">
+                <p>Control definitions?</p>
+                <p>
+                    {% if summary.has_control_definitions %}
+                        Yes.
+                    {% else %}
+                        No.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="metadata-item">
+                <p>Core / non-core info?</p>
+                <p>
+                    {% if summary.has_core_info %}
+                        Yes.
+                    {% else %}
+                        No.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="metadata-item">
+                <p><code>OMIT=1</code> endpoints?</p>
+                <div class="omit">
+                {% if summary.omit1_endpoints %}
+                    <p>Yes, <button data-modal-target="dialog-omit1">{{ summary.omit1_endpoints | length }} endpoints</button>.</p>
+                    <dialog id="dialog-omit1">
+                        <button autofocus>Close</button>
+                        <ul>
+                        {% for endpoint in summary.omit1_endpoints %}
+                            <li>
+                                <code>{{ endpoint }}</code>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </dialog>
+                {% else %}
+                    <p>No</p>
+                {% endif %}
+                </div>
+            </div>
+
+            <div class="metadata-item omit">
+                <p><code>OMIT=2</code> endpoints?</p>
+                <div class="omit">
+                {% if summary.omit2_endpoints %}
+                    <p>Yes, <button data-modal-target="dialog-omit2">{{ summary.omit2_endpoints | length }} endpoints</button>.</p>
+                    <dialog id="dialog-omit2">
+                        <button autofocus>Close</button>
+                        <ul>
+                        {% for endpoint in summary.omit2_endpoints %}
+                            <li>
+                                <code>{{ endpoint }}</code>
+                            </li>
+                        {% endfor %}
+                        </ul>
+                    </dialog>
+
+                {% else %}
+                    No
+                {% endif %}
+                </div>
+            </div>
+    
+        </article>
+    </div>
 
     <h2>Endpoint naming</h2>
     {% include 'expectation_name_duplicates.html' %}
@@ -425,4 +492,21 @@
         link.href = url;
         link.download = link.dataset.excelFileName;
     }
+</script>
+
+<script>
+const modalButtons = document.querySelectorAll("[data-modal-target]");
+
+for (const button of modalButtons) {
+    const dialog = document.getElementById(button.dataset.modalTarget);
+
+    button.addEventListener("click", () => {
+       dialog.showModal();
+    });
+
+    const closeButton = dialog.querySelector("button:first-child");
+    closeButton.addEventListener("click", () => {
+       dialog.close(); 
+    });
+}
 </script>

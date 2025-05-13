@@ -87,11 +87,16 @@ def get_summary(dataf):
 
     has_core_info = "CORE_ENDPOINTS" in columns and "REASON_FOR_NONCORE" in columns
 
+    omit1_endpoints = dataf.filter(pl.col("OMIT") == "1").get_column("NAME").sort().to_list()
+    omit2_endpoints = dataf.filter(pl.col("OMIT") == "2").get_column("NAME").sort().to_list()
+
     return {
         "n_columns": len(dataf.columns),
         "n_rows": dataf.height,
         "has_control_definitions": has_control_definitions,
         "has_core_info": has_core_info,
+        "omit1_endpoints": omit1_endpoints,
+        "omit2_endpoints": omit2_endpoints,
     }
 
 
@@ -132,11 +137,7 @@ def assess_simple_names(dataf) -> Expectation:
     regex_python_compiled = re.compile(regex_complex_names)
 
     complex_names = (
-        names.filter(
-            names.str.contains(regex_complex_names)
-        )
-        .unique()
-        .to_list()
+        names.filter(names.str.contains(regex_complex_names)).unique().to_list()
     )
 
     complex_names = sorted(complex_names)
@@ -148,16 +149,9 @@ def assess_simple_names(dataf) -> Expectation:
         parts = re.split(regex_python_compiled, name)
         for part in parts:
             is_complex = re.fullmatch(regex_python_compiled, part)
-            name_annotated.append({
-                "string": part,
-                "is_complex": is_complex
-            })
+            name_annotated.append({"string": part, "is_complex": is_complex})
 
-        data.append({
-            "endpoint": name,
-            "name_annotated": name_annotated
-        })
-
+        data.append({"endpoint": name, "name_annotated": name_annotated})
 
     status = Status.ALL_GOOD if len(complex_names) == 0 else Status.FAIL
 
