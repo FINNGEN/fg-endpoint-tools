@@ -12,8 +12,16 @@ Assumptions:
 - must: <endpoint>_WIDE and basic <endpoint> have the same control definition
 - should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
 - must: NAME should contain only upper case A-Z, numbers 0-9, or _ (underscore)
-- TODO should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
+- should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
 - TODO must: all descendants endpoints (from `INCLUDE` recursively) must exist
+- TODO should: no duplicate endpoints in the `INCLUDE` field
+- TODO must: all _COMORB endpoint are OMIT=2
+
+TODO(Vincent 2025-05-16)  Add proposed fixes for each expectation:
+For example, for the include OMIT=2 expectation:
+1. Add `OMIT=2` to this endpoint.
+2. Remove `OMIT=2` for the included endpoint.
+3. Remove the included endpoint from the `INCLUDE` list.
 """
 
 import io
@@ -63,6 +71,7 @@ def collect_report(file_like):
         assess_hd_cod_same_icd(dataf),
     ]
     expectations += assess_wide_cancer_endpoints(dataf)
+    expectations += assess_include_rules(dataf)
 
     expectations = {xx.idname: xx for xx in expectations}
 
@@ -87,8 +96,12 @@ def get_summary(dataf):
 
     has_core_info = "CORE_ENDPOINTS" in columns and "REASON_FOR_NONCORE" in columns
 
-    omit1_endpoints = dataf.filter(pl.col("OMIT") == "1").get_column("NAME").sort().to_list()
-    omit2_endpoints = dataf.filter(pl.col("OMIT") == "2").get_column("NAME").sort().to_list()
+    omit1_endpoints = (
+        dataf.filter(pl.col("OMIT") == "1").get_column("NAME").sort().to_list()
+    )
+    omit2_endpoints = (
+        dataf.filter(pl.col("OMIT") == "2").get_column("NAME").sort().to_list()
+    )
 
     return {
         "n_columns": len(dataf.columns),
@@ -539,6 +552,92 @@ def assess_hd_cod_same_icd(dataf):
     )
 
 
+def assess_include_rules(dataf):
+    map_parent_children = get_map_parent_children(dataf)
+    map_child_ancestors = get_map_child_ancestors(map_parent_children)
+
+    omit2_endpoints = set(
+        dataf.filter(pl.col("OMIT") == "2").get_column("NAME").to_list()
+    )
+
+    expectations = [
+        assess_include_omit2(
+            map_parent_children, map_child_ancestors, omit2_endpoints, dataf
+        )
+    ]
+
+    return expectations
+
+
+def assess_include_omit2(
+    map_parent_children, map_child_ancestors, omit2_endpoints, dataf
+):
+    endpoints_in_error = []
+    data = {}
+
+    for parent, children in map_parent_children.items():
+        normal_endpoint = parent not in omit2_endpoints
+        has_omit2_children = not children.isdisjoint(omit2_endpoints)
+
+        if normal_endpoint and has_omit2_children:
+            endpoints_in_error.append(parent)
+
+            include_definition = (
+                dataf.filter(pl.col("NAME") == parent).select("INCLUDE").item()
+            )
+            omit2_children = sorted(children.intersection(omit2_endpoints))
+
+            data[parent] = {
+                "omit2_children": omit2_children,
+                "highlight": highlight(include_definition, omit2_children),
+            }
+
+    endpoints_in_error = sorted(endpoints_in_error)
+
+    status = status.ALL_GOOD if len(endpoints_in_error) == 0 else Status.FAIL
+
+    return Expectation(
+        idname="include_omit2",
+        status=status,
+        n_errors=len(endpoints_in_error),
+        endpoints_in_error=endpoints_in_error,
+        data=data,
+        excel_file_b64=write_excel_as_b64(dataf, endpoints_in_error),
+    )
+
+
+def highlight(text, words):
+    # Assumes all words are found in text.
+    # Assumes non-overlapping words.
+    # Assumes at least 1 word in words.
+    text_breakdown = []
+
+    positions = []
+    for ww in words:
+        start = text.find(ww)
+        positions.append({"start": start, "end": start + len(ww)})
+
+    positions = sorted(positions, key=lambda pp: pp["start"])
+    current_position = 0
+    for pp in positions:
+        good_text = text[current_position : pp["start"]]
+
+        if good_text != "":
+            text_breakdown.append({"text": good_text, "bad": False})
+
+        bad_text = text[pp["start"] : pp["end"]]
+        text_breakdown.append({"text": bad_text, "bad": True})
+
+        current_position = pp["end"]
+
+    last_end = positions[-1]["end"]
+    if last_end < len(text):
+        good_text = text[last_end:]
+        text_breakdown.append({"text": good_text, "bad": False})
+
+    return text_breakdown
+
+
 def simple_diff(string_a, string_b):
     # Transform None to empty string.
     string_a = string_a or ""
@@ -592,3 +691,51 @@ def write_excel_as_b64(dataf, endpoint_names):
     as_b64 = b64encode(in_memory_file.getvalue()).decode("utf-8")
 
     return as_b64
+
+
+def get_map_parent_children(dataf):
+    rows = dataf.select("NAME", "INCLUDE").to_dicts()
+
+    map_parent_children = {}
+    for rr in rows:
+        parent = rr["NAME"]
+
+        if rr["INCLUDE"]:
+            children = set(rr["INCLUDE"].split("|"))
+        else:
+            children = set()
+
+        map_parent_children[parent] = children
+
+    return map_parent_children
+
+
+def get_map_child_ancestors(map_parent_children):
+    # 1. Start by reversing the graph from  parent->children  to  child->parents
+    map_child_parents = {}
+
+    for parent, children in map_parent_children.items():
+        for child in children:
+            existing_parents = map_child_parents.get(child, set())
+            existing_parents.add(parent)
+            map_child_parents[child] = existing_parents
+
+    # 2. Traverse the graph to build the set of all ancestors for each node
+    map_child_ancestors = {}
+    for child, parents in map_child_parents.items():
+        if parents:
+            ancestors = rec_ancestors_of(child, set(), map_child_parents)
+            map_child_ancestors[child] = ancestors
+
+    return map_child_ancestors
+
+
+def rec_ancestors_of(node, acc, map_child_parents):
+    if node not in map_child_parents:
+        return acc
+
+    else:
+        for parent in map_child_parents[node]:
+            acc.add(parent)
+            acc = rec_ancestors_of(parent, acc, map_child_parents)
+            return acc

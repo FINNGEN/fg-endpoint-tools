@@ -1,0 +1,41 @@
+{% extends "base_expectation.html" %}
+
+{% set expectation = expectations.include_omit2 %}
+
+{% block description %}
+I am expecting that endpoints without <code>OMIT=2</code> don't <code>INCLUDE</code> any <code>OMIT=2</code> endpoints.
+{% endblock %}
+
+
+{% block output_details %}
+  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints not defined with <code>OMIT=2</code>, but defined with some <code>OMIT=2</code> endpoints in their <code>INCLUDE</code> definition.</p>
+
+
+  <ol class="utils-li-space">
+  {% for parent in expectation.endpoints_in_error %}
+  <li>
+    <p>
+      <code>{{ parent }}</code> includes the following <code>OMIT=2</code> endpoints:
+    </p>
+    <ul>
+    {% for child in expectation.data[parent]['omit2_children'] %}
+      <li><code>{{ child }}</code></li>
+    {% endfor %}
+    </ul>
+    <p>
+      in its <code>INCLUDE</code> definition:
+    </p>
+    <p>
+      <code><!--
+      -->{% for tt in expectation.data[parent]['highlight'] %}<!--
+        --><span {% if tt.bad %}class="highlight-bad"{% endif %}><!--
+          -->{{ tt.text }}<!--
+        --></span><!--
+      -->{% endfor %}<!--
+      --></code>
+    </p>
+    <hr>
+  </li>
+  {% endfor %}
+  </ol>
+{% endblock %}

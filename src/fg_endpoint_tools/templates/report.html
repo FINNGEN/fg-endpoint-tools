@@ -47,6 +47,11 @@
             font-family: "Source Code Pro Variable", monospace;
         }
 
+        hr {
+            border-top: 1px solid #dadada;
+            border-bottom: 0;
+        }
+
         header {
             margin: auto;
             padding: 2rem 1rem 0.5rem;
@@ -426,6 +431,9 @@
     {% include 'expectation_cancer_wide_basic_have_no_hilmo_definition.html' %}
 
     {% include 'expectation_cancer_wide_same_control_definition.html' %}
+
+    <h2><code>INCLUDE</code> chains</h2>
+    {% include 'expectation_include_omit2.html' %}
 </main>
 
 <script>
