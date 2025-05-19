@@ -1,0 +1,35 @@
+{% extends "base_expectation.html" %}
+
+{% set expectation = expectations.include_all_endpoints_exist %}
+
+{% block description %}
+I am expecting that all the endpoints defined in the <code>INCLUDE</code> column exist.
+{% endblock %}
+
+
+{% block output_details %}
+  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> endpoints with an <code>INCLUDE</code> value containing endpoints that do not exist.</p>
+
+  {% if expectation.endpoints_in_error %}
+  <table>
+    <tr>
+      <th>Endpoint <code>NAME</code></th>
+      <th>Value of <code>INCLUDE</code></th>
+    </tr>
+    {% for ee in expectation.endpoints_in_error %}
+    <tr>
+      <td><code>{{ ee }}</code></td>
+      <td>
+        <code>
+        {% for word in expectation.data[ee] %}<!--
+          --><span {% if word.bad %}class="highlight-bad"{% endif %}><!--
+            -->{{ word.text }}<!--
+          --></span><!--
+        -->{% endfor %}
+        </code>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock %}

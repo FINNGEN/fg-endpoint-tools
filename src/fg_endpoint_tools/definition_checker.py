@@ -13,7 +13,7 @@ Assumptions:
 - should: endpoint HD_ICD_<x> be the same has COD_ICD_<x>
 - must: NAME should contain only upper case A-Z, numbers 0-9, or _ (underscore)
 - should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
-- TODO must: all descendants endpoints (from `INCLUDE` recursively) must exist
+- must: all descendants endpoints (from `INCLUDE` recursively) must exist
 - TODO should: no duplicate endpoints in the `INCLUDE` field
 - must: all _COMORB endpoints are OMIT=2
 
@@ -562,12 +562,53 @@ def assess_include_rules(dataf):
     )
 
     expectations = [
+        assess_include_all_endpoints_exist(dataf),
         assess_include_omit2(
             map_parent_children, map_child_ancestors, omit2_endpoints, dataf
-        )
+        ),
     ]
 
     return expectations
+
+
+def assess_include_all_endpoints_exist(dataf):
+    all_endpoints = set(dataf.get_column("NAME"))
+
+    subset = (
+        dataf.filter(pl.col("INCLUDE") != "")
+        .select("NAME", "INCLUDE")
+        .sort(by="NAME")
+        .to_dicts()
+    )
+
+    endpoints_in_error = []
+    for row in subset:
+        children = set(row["INCLUDE"].split("|"))
+
+        if children.isdisjoint(all_endpoints):
+            endpoints_in_error.append(row["NAME"])
+
+    status = Status.FAIL if endpoints_in_error else Status.ALL_GOOD
+
+    dataf_include_split = (
+        dataf.filter(pl.col("NAME").is_in(endpoints_in_error))
+        .select("NAME", "INCLUDE", pl.col("INCLUDE").str.split("|").alias("split"))
+        .sort(by="NAME")
+    )
+
+    data = {}
+    for row in dataf_include_split.to_dicts():
+        highlight_words = set(row["split"]) - all_endpoints
+        data[row["NAME"]] = highlight(row["INCLUDE"], highlight_words)
+
+    return Expectation(
+        idname="include_all_endpoints_exist",
+        status=status,
+        n_errors=len(endpoints_in_error),
+        endpoints_in_error=endpoints_in_error,
+        data=data,
+        excel_file_b64=write_excel_as_b64(dataf, endpoints_in_error),
+    )
 
 
 def assess_include_omit2(
