@@ -1,0 +1,27 @@
+{% extends "base_expectation.html" %}
+
+{% set expectation = expectations.comorb_are_omit2 %}
+
+{% block description %}
+I am expecting that all comorbidities endpoints are defined with <code>OMIT=2</code>.
+{% endblock %}
+
+
+{% block output_details %}
+  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> comorbidities endpoints not defined with <code>OMIT=2</code>.</p>
+
+  {% if expectation.endpoints_in_error %}
+  <table>
+    <tr>
+      <th>Endpoint <code>NAME</code></th>
+      <th>Value of <code>OMIT</code></th>
+    </tr>
+    {% for ee in expectation.data %}
+    <tr>
+      <td><code>{{ ee.name }}</code></td>
+      <td><code class="highlight-bad">{{ ee.omit }}</code></td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% endif %}
+{% endblock %}

@@ -15,7 +15,7 @@ Assumptions:
 - should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
 - TODO must: all descendants endpoints (from `INCLUDE` recursively) must exist
 - TODO should: no duplicate endpoints in the `INCLUDE` field
-- TODO must: all _COMORB endpoint are OMIT=2
+- must: all _COMORB endpoints are OMIT=2
 
 TODO(Vincent 2025-05-16)  Add proposed fixes for each expectation:
 For example, for the include OMIT=2 expectation:
@@ -69,6 +69,7 @@ def collect_report(file_like):
         assess_any_exallc(dataf),
         assess_any_exmore(dataf),
         assess_hd_cod_same_icd(dataf),
+        assess_comorb_are_omit2(dataf),
     ]
     expectations += assess_wide_cancer_endpoints(dataf)
     expectations += assess_include_rules(dataf)
@@ -603,6 +604,31 @@ def assess_include_omit2(
         endpoints_in_error=endpoints_in_error,
         data=data,
         excel_file_b64=write_excel_as_b64(dataf, endpoints_in_error),
+    )
+
+
+def assess_comorb_are_omit2(dataf):
+    subset = (
+        dataf.filter(pl.col("NAME").str.contains("COMORB") & (pl.col("OMIT") != "2"))
+        .select("NAME", "OMIT")
+        .sort(by="NAME")
+    )
+
+    endpoints_in_error = subset.get_column("NAME").to_list()
+
+    data = subset.rename({"NAME": "name", "OMIT": "omit"}).to_dicts()
+
+    status = Status.FAIL if endpoints_in_error else Status.ALL_GOOD
+
+    excel_b64 = write_excel_as_b64(dataf, endpoints_in_error)
+
+    return Expectation(
+        idname="comorb_are_omit2",
+        status=status,
+        n_errors=len(endpoints_in_error),
+        endpoints_in_error=endpoints_in_error,
+        data=data,
+        excel_file_b64=excel_b64,
     )
 
 
