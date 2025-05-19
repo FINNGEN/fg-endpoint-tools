@@ -14,7 +14,7 @@ Assumptions:
 - must: NAME should contain only upper case A-Z, numbers 0-9, or _ (underscore)
 - should: no OMIT=2 endpoints getting recursively included in non-OMIT=2 endpoints
 - must: all descendants endpoints (from `INCLUDE` recursively) must exist
-- TODO should: no duplicate endpoints in the `INCLUDE` field
+- should: no duplicate endpoints in the `INCLUDE` field
 - must: all _COMORB endpoints are OMIT=2
 
 TODO(Vincent 2025-05-16)  Add proposed fixes for each expectation:
@@ -563,6 +563,7 @@ def assess_include_rules(dataf):
 
     expectations = [
         assess_include_all_endpoints_exist(dataf),
+        assess_include_endpoints_are_unique(dataf),
         assess_include_omit2(
             map_parent_children, map_child_ancestors, omit2_endpoints, dataf
         ),
@@ -603,6 +604,45 @@ def assess_include_all_endpoints_exist(dataf):
 
     return Expectation(
         idname="include_all_endpoints_exist",
+        status=status,
+        n_errors=len(endpoints_in_error),
+        endpoints_in_error=endpoints_in_error,
+        data=data,
+        excel_file_b64=write_excel_as_b64(dataf, endpoints_in_error),
+    )
+
+
+def assess_include_endpoints_are_unique(dataf):
+    dataf_errors = (
+        dataf.select("NAME", "INCLUDE", pl.col("INCLUDE").str.split("|").alias("split"))
+        .with_columns(
+            pl.col("split").list.len().alias("n_include"),
+            pl.col("split").list.n_unique().alias("n_unique"),
+        )
+        .filter(pl.col("n_include") != pl.col("n_unique"))
+        .sort(by="NAME")
+    )
+
+    endpoints_in_error = dataf_errors.get_column("NAME").to_list()
+
+    status = Status.WARNING if endpoints_in_error else Status.ALL_GOOD
+
+    data = {}
+    for dd in dataf_errors.to_dicts():
+        acc_children = set()
+        duplicates = set()
+
+        for child in dd["split"]:
+            if child not in acc_children:
+                acc_children.add(child)
+
+            else:
+                duplicates.add(child)
+
+        data[dd["NAME"]] = duplicates
+
+    return Expectation(
+        idname="include_endpoints_are_unique",
         status=status,
         n_errors=len(endpoints_in_error),
         endpoints_in_error=endpoints_in_error,
