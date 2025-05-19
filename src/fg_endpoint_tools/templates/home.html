@@ -1,72 +1,8 @@
-<!DOCTYPE html>
-<head>
-  <title>FinnGen Endpoint Definition Checker</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='fonts.css') }}" />
-  <style>
-html {
-  max-width: 170ch;
-  margin: auto;
+{% extends 'app.html' %}
 
-  background: #f6f6f6;
-  font-family: "Source Sans 3 Variable", sans-serif;
+{% block body_class %}page-home{% endblock%}
 
-  scrollbar-gutter: stable;
-}
-
-body {
-  margin: 0;
-}
-
-form {
-  display: none;
-}
-
-header {
-  padding: 2rem 1rem 0.5rem;
-
-  font-size: 1.5em;
-  font-weight: bold;
-
-  background-color: white;
-  border: 1px solid #757575;
-  border-top-width: 0;
-  border-radius: 0 0 8px 8px;
-
-}
-
-#drop-area {
-  max-width: 100ch;
-  height: min(60vh, 40ch);
-
-  margin: auto;
-  margin-top: 3em;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  
-  font-family: "Source Serif 4 Variable", serif;
-  font-size: 1.25rem;
-  text-align: center;
-  text-wrap: balance;
-
-  background: white;
-  border: 2px dashed #aaa;
-  border-radius: 12px;
-
-  cursor: pointer;
-}
-#drop-area.highlight {
-  border-color: purple;
-}
-  </style>
-</head>
-<body>
-
-<header>
-Endpoint Definition Checker
-</header>
-
+{% block content_main %}
 <main>
 <div id="drop-area">
   <p>Drag and drop a <b>FinnGen endpoint definition file</b> here.</p>
@@ -142,6 +78,4 @@ function handleFiles(files) {
   }
 }
 </script>
-
-</main>
-</body>
+{% endblock %}

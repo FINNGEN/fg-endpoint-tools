@@ -1,0 +1,340 @@
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Resets ~~~ */
+:root {
+    box-sizing: border-box;
+}
+*,
+::before,
+::after {
+    box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+}
+
+h2 {
+  font-size: 1.25rem;
+}
+
+th {
+  text-align: left;
+}
+
+dialog {
+  padding: 1em 2em;    
+
+  & button:first-child {
+    position: sticky;
+    top: 0;
+
+    width: 100%;
+
+    margin-bottom: 1em;
+  }
+}
+
+a:has(header) {
+  color: black;
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Defaults ~~~ */
+html {
+  max-width: 170ch;
+  margin: auto;
+
+  font-family: "Source Sans 3 Variable", sans-serif;
+
+  background: #f6f6f6;
+
+  scrollbar-gutter: stable;
+}
+
+tr:nth-child(2n + 3) {
+  background: rgb(243, 243, 243);
+}
+
+code {
+  font-family: "Source Code Pro Variable", monospace;
+}
+
+hr {
+  border-top: 1px solid #dadada;
+  border-bottom: 0;
+}
+
+header {
+  margin: auto;
+  padding: 2rem 1rem 0.5rem;
+
+  font-size: 1.5em;
+  font-weight: bold;
+
+  background-color: white;
+  border: 1px solid #757575;
+  border-top-width: 0;
+  border-radius: 0 0 8px 8px;
+}
+
+main {
+  padding: 0 1rem;
+}
+
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Page: Home ~~~ */
+body.page-home {
+  & form {
+    display: none;
+  }
+
+  & #drop-area {
+    max-width: 100ch;
+    height: min(60vh, 40ch);
+
+    margin: auto;
+    margin-top: 3em;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  
+    font-family: "Source Serif 4 Variable", serif;
+    font-size: 1.25rem;
+    text-align: center;
+    text-wrap: balance;
+
+    background: white;
+    border: 2px dashed #aaa;
+    border-radius: 12px;
+
+    cursor: pointer;
+  }
+  & #drop-area.highlight {
+    border-color: purple;
+  }
+}
+
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Page: Report ~~~ */
+
+/* ~~~ SECTION: Metadata ~~~ */
+.report-metadata {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 4em;
+
+  margin: 2rem 1rem 4em;
+}
+
+.metadata {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(auto, max-content));
+  column-gap: 0.8rem;
+
+  max-width: 120ch;
+  margin-top: 2em;
+
+  font-weight: 500;
+
+
+  & h2 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  & p {
+    margin: 0;
+  }
+
+  & ul {
+    margin: 0;
+    padding-left: 0.8rem;
+  }
+
+  & .metadata-item {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+
+    padding: 0.5rem 0;
+  }
+  & .metadata-item > :first-child {
+    color: #515151;
+    text-align: right;
+  }
+
+  & .metadata-item:not(:last-child) {
+    border-bottom: 1px solid #e6e6e6;
+  }
+
+  & .metadata-item .omit {
+    display: flex;
+  }
+
+  & .metadata-item .omit summary {
+    margin-left: 1ch;
+    border-bottom: 1px solid #515151;
+    cursor: pointer;
+  }
+
+
+  & .metadata-columns-content {
+    max-width: fit-content;
+
+    display: grid;
+    grid-template-columns: auto auto;
+    column-gap: 0.5rem;
+  }
+
+  & .actions-quick-report {
+    display: flex;
+    column-gap: 1rem;
+
+    & p {
+      display: flex;
+      column-gap: 0.3rem;
+    }
+  }
+}
+
+/* ~~~ SECTION: Expectations ~~~ */
+.check {
+  margin-bottom: 0.5em;
+
+  border: 1px solid #dfdfdf;
+  border-radius: 8px;
+  border-bottom-width: 3px;
+}
+
+.check:not(.opened):hover {
+  border-bottom: 3px solid #2dadda;
+}
+
+.check.closed,
+.check.preview,
+.check-expectation {
+  cursor: pointer;
+}
+
+:is(.check.preview, .check.opened) .check-expectation {
+  border-bottom: 1px solid #dadada;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.check.opened {
+  outline: 2px solid #2dadda;
+  box-shadow: 0 0 20px 0 #2dadda6b;
+}
+
+.check.opened .check-expectation {
+  position: sticky;
+  top: 0;
+}
+
+.check-expectation {
+  padding: 0.5em 1em;
+
+  display: grid;
+  grid-template-columns: 2ch auto 10ch 14ch;
+  column-gap: 0.5em;
+  align-items: center;
+
+  border-radius: 8px;
+  background: linear-gradient(#fff, #fff 50%, #fafafa);
+}
+
+.check-expectation p {
+  /* Resets default to 0, handling margin and padding on our own*/
+  margin: 0;
+}
+
+.description {
+  font-family: "Source Serif 4 Variable", serif;
+  font-size: 1.25rem;
+
+  & code {
+    padding: 0 0.2em;
+
+    font-weight: 600;
+
+    background-color: rgba(151, 147, 232, 0.06);
+    border-bottom: 1px solid rgba(151, 147, 232, 0.25);
+  }
+}
+
+p.error-count {
+  text-align: right;
+
+  color: #555;
+}
+
+.action-show-details {
+  font-family: "Source Sans 3 Variable", sans-serif;
+  font-weight: 600;
+
+  text-align: right;
+
+  color: LinkText;
+  text-decoration: underline;
+}
+
+.output-preview,
+.output-details {
+  border-radius: 0 0 8px 8px;
+  background-color: #fcfcfc;
+}
+
+.output-preview p {
+  margin: 0;
+  padding: 0.5em 1em;
+
+  color: #555;
+
+  text-wrap: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.output-details {
+  padding: 0.5em 1em;
+
+  & code {
+    font-weight: 500;
+  }
+
+  & article:not(:last-child) {
+    margin-bottom: 2em;
+  }
+
+  & .download-excel {
+    margin: 0;
+    text-align: center;
+  }
+}
+
+/* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Utility classes ~~~ */
+.no-data {
+  color: #999;
+
+  &::before {
+    content: "no value";
+
+    font-family: "Source Serif 4 Variable", serif;
+    font-style: italic;
+  }
+}
+
+.highlight-bad {
+  padding: 0.05em;
+
+  background: #f8dfe1;
+}
+
+.utils-break-word {
+  word-break: break-word;
+}
+
+.utils-hidden {
+  display: none;
+}
+
