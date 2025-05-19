@@ -1,6 +1,6 @@
 [project]
 name = "fg-endpoint-tools"
-version = "0.6.0"
+version = "0.7.0"
 description = "Collection of tools to work with FinnGen endpoints."
 readme = "README.md"
 authors = [
