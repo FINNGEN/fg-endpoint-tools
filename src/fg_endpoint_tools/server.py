@@ -17,6 +17,11 @@ def redir():
     return redirect("/definition-checker/")
 
 
+@app.errorhandler(500)
+def serve_error_http_500(error):
+    return render_template("500.html", error=error), 500
+
+
 @app.route("/definition-checker/", methods=["GET"])
 def serve_definition_checker_home():
     return render_template("home.html")
@@ -28,24 +33,29 @@ def serve_definition_checker_report():
 
     file_as_bytes = BytesIO()
     file.save(file_as_bytes)
+
     report = definition_checker.collect_report(file_as_bytes)
 
-    for _expectation_id, expectation in report["expectations"].items():
-        if expectation.status == definition_checker.Status.ALL_GOOD:
-            expectation.html_view["class_check_open"] = "closed"
-        else:
-            expectation.html_view["class_check_open"] = "preview"
+    if report["status"] == "FAIL":
+        return render_template("report_error.html", **report)
 
-    context = {
-        "file_name": file.filename,
-        "run_datetime": get_current_time(),
-    }
+    elif report["status"] == "SUCCESS":
+        for _expectation_id, expectation in report["expectations"].items():
+            if expectation.status == definition_checker.Status.ALL_GOOD:
+                expectation.html_view["class_check_open"] = "closed"
+            else:
+                expectation.html_view["class_check_open"] = "preview"
 
-    context |= report
+        context = {
+            "file_name": file.filename,
+            "run_datetime": get_current_time(),
+        }
 
-    context["status_counts"] = status_counts(report)
+        context |= report
 
-    return render_template("report.html", **context)
+        context["status_counts"] = status_counts(report)
+
+        return render_template("report.html", **context)
 
 
 def get_current_time() -> str:

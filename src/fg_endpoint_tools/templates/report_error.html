@@ -1,0 +1,22 @@
+{% extends 'app.html' %}
+
+{% block title %}Error &bull; Endpoint Definition Checker{% endblock %}
+
+{% block content_main %}
+<main>
+
+<h1>Error</h1>
+
+{% if fail_reason == "missing_columns" %}
+<p>
+  I was able to read the Excel file provided, but the following <b>columns are missing</b>:
+</p>
+<ul>
+  {% for col in missing_columns %}
+  <li><code>{{ col }}</code></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+</main>
+{% endblock %}

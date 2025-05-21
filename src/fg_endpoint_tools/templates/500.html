@@ -1,0 +1,16 @@
+{% extends "app.html" %}
+
+{% block title%}Error &bull; Endpoint Definition Checker{% endblock %}
+
+{% block content_main %}
+<h1>Error {{ error.code }} {{ error.name }}</h1>
+
+<p>An error occured.</p>
+
+<p>Your options:</p>
+
+<ol>
+  <li>Try again.</li>
+  <li>Contact support, and <b>attach the file that triggered this error</b>.</li>
+</ol>
+{% endblock %}

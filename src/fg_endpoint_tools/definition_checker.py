@@ -57,29 +57,72 @@ class Expectation:
 
 def read_definitions_excel(file_like):
     dataf = pl.read_excel(file_like, read_options={"dtypes": "string"})
-    return dataf
+
+    required_columns = set(
+        [
+            "CANC_BEHAV",
+            "CANC_MORPH",
+            "CANC_MORPH_EXCL",
+            "CANC_TOPO",
+            "CANC_TOPO_EXCL",
+            "COD_ICD_10",
+            "COD_ICD_10_EXCL",
+            "COD_ICD_8",
+            "COD_ICD_8_EXCL",
+            "COD_ICD_9",
+            "COD_ICD_9_EXCL",
+            "CONTROL_CONDITIONS",
+            "CONTROL_EXCLUDE",
+            "CONTROL_PRECONDITIONS",
+            "HD_ICD_10",
+            "HD_ICD_10_EXCL",
+            "HD_ICD_8",
+            "HD_ICD_8_EXCL",
+            "HD_ICD_9",
+            "HD_ICD_9_EXCL",
+            "INCLUDE",
+            "NAME",
+            "OMIT",
+        ]
+    )
+
+    missing_columns = required_columns - set(dataf.columns)
+    missing_columns = sorted(missing_columns)
+
+    return dataf, missing_columns
 
 
 def collect_report(file_like):
-    dataf = read_definitions_excel(file_like)
+    dataf, missing_columns = read_definitions_excel(file_like)
 
-    expectations = [
-        assess_duplicates_by_name(dataf),
-        assess_simple_names(dataf),
-        assess_any_exallc(dataf),
-        assess_any_exmore(dataf),
-        assess_hd_cod_same_icd(dataf),
-        assess_comorb_are_omit2(dataf),
-    ]
-    expectations += assess_wide_cancer_endpoints(dataf)
-    expectations += assess_include_rules(dataf)
+    if missing_columns:
+        report = {
+            "status": "FAIL",
+            "fail_reason": "missing_columns",
+            "missing_columns": missing_columns,
+        }
 
-    expectations = {xx.idname: xx for xx in expectations}
+    else:
+        expectations = [
+            assess_duplicates_by_name(dataf),
+            assess_simple_names(dataf),
+            assess_any_exallc(dataf),
+            assess_any_exmore(dataf),
+            assess_hd_cod_same_icd(dataf),
+            assess_comorb_are_omit2(dataf),
+        ]
+        expectations += assess_wide_cancer_endpoints(dataf)
+        expectations += assess_include_rules(dataf)
 
-    return {
-        "summary": get_summary(dataf),
-        "expectations": expectations,
-    }
+        expectations = {xx.idname: xx for xx in expectations}
+
+        report = {
+            "status": "SUCCESS",
+            "summary": get_summary(dataf),
+            "expectations": expectations,
+        }
+
+    return report
 
 
 def get_summary(dataf):
@@ -123,8 +166,6 @@ def get_summary(dataf):
 
 
 def assess_duplicates_by_name(dataf) -> Expectation:
-    assert "NAME" in dataf.columns
-
     names = dataf.get_column("NAME")
     dups = names.filter(names.is_duplicated()).unique().to_list()
 
@@ -224,8 +265,6 @@ def assess_any_exmore(dataf) -> Expectation:
 
 
 def find_any_with_suffix(dataf, suffix):
-    assert "NAME" in dataf.columns
-
     with_suffix = (
         dataf.filter(pl.col("NAME").str.ends_with(suffix))
         .get_column("NAME")
