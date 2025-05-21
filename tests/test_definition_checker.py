@@ -242,3 +242,41 @@ def test_wide_cancer_endpoints__missing_basic():
     actual = definition_checker.check_wide_cancer_endpoints(dataf)
 
     assert expected == actual
+
+
+def test_util_rec_targets_of():
+    map_node_targets = {
+        "GrandParent1": ["Parent1", "Parent2", "Parent3"],
+        "GrandParent2": ["Parent3"],
+        # Parent1 : intentionnaly missing
+        "Parent2": ["Child1", "Child2"],
+        "Parent3": ["Child3"],
+    }
+
+    gp1_expected = set(["Parent1", "Parent2", "Parent3", "Child1", "Child2", "Child3"])
+    assert gp1_expected == definition_checker.rec_targets_of(
+        "GrandParent1", map_node_targets
+    )
+
+    gp2_expected = set(["Parent3", "Child3"])
+    assert gp2_expected == definition_checker.rec_targets_of(
+        "GrandParent2", map_node_targets
+    )
+
+    p1_expected = set()
+    assert p1_expected == definition_checker.rec_targets_of("Parent1", map_node_targets)
+
+    p2_expected = set(["Child1", "Child2"])
+    assert p2_expected == definition_checker.rec_targets_of("Parent2", map_node_targets)
+
+    p3_expected = set(["Child3"])
+    assert p3_expected == definition_checker.rec_targets_of("Parent3", map_node_targets)
+
+    c1_expected = set()
+    assert c1_expected == definition_checker.rec_targets_of("Child1", map_node_targets)
+
+    c2_expected = set()
+    assert c2_expected == definition_checker.rec_targets_of("Child2", map_node_targets)
+
+    c3_expected = set()
+    assert c3_expected == definition_checker.rec_targets_of("Child3", map_node_targets)

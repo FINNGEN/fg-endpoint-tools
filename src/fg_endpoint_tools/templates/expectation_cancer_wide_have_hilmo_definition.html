@@ -9,32 +9,30 @@
 
 {% block output_details %}
   <p>
-    Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>_WIDE</code> endpoints without a Hilmo definition in any of the columns:
+    Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>_WIDE</code> endpoints without a Hilmo definition, and no Hilmo definition from endpoints in their <code>INCLUDE</code> chain either.
+  </p>
+  <p>I am checking the following columns for Hilmo codes:
     <code>HD_ICD_10</code>, <code>HD_ICD_9</code>, <code>HD_ICD_8</code>, <code>HD_ICD_10_EXCL</code>, <code>HD_ICD_9_EXCL</code>, <code>HD_ICD_8_EXCL</code>.
   </p>
 
+
   {% if expectation.endpoints_in_error %}
-  <table>
-    <tr>
-      <th>Endpoint <code>NAME</code></th>
-      {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
-      <th>Value for <code>{{ col }}</code></th>
-      {% endfor %}
-    </tr>
+  <ol>
     {% for dd in expectation.data %}
-    <tr>
-      <td><code>{{ dd.endpoint }}</code></td>
-      {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
-      <td>
-        {% if dd['values'][col] %}
-        <code>{{ dd['values'][col] }}</code>
-        {% else %}
-        <span class="no-data"></span>
-        {% endif %}
-      </td>
+    <li>
+      <p><code>{{ dd.endpoint }}</code> has no Hilmo definition.</p>
+
+      {% if dd.descendants %}
+      <p>Endpoints in the <code>INCLUDE</code> chain:</p>
+      <ol>
+      {% for descendant in dd.descendants %}
+        <li><code>{{ descendant }}</code> has no Hilmo definition.</li>
       {% endfor %}
-    </tr>
+      </ol>
+      {% endif %}
+
+    </li>
     {% endfor %}
-  </table>
+  </ol>
   {% endif %}
 {% endblock %}

@@ -16,12 +16,19 @@ Assumptions:
 - must: all descendants endpoints (from `INCLUDE` recursively) must exist
 - should: no duplicate endpoints in the `INCLUDE` field
 - must: all _COMORB endpoints are OMIT=2
+- TODO should: C3_CANCER contains all the C3_* cancer endpoints via its INCLUDE definition
+
 
 TODO(Vincent 2025-05-16)  Add proposed fixes for each expectation:
 For example, for the include OMIT=2 expectation:
 1. Add `OMIT=2` to this endpoint.
 2. Remove `OMIT=2` for the included endpoint.
 3. Remove the included endpoint from the `INCLUDE` list.
+
+
+TODO(Vincent 2025-05-23)  Make sure we check not all endpionts in the "cancer WIDE" checks.
+For example, we are now reporting T1D which is unrelated to Cancer.
+Not sure yet what "cancer WIDE" means, maybe only "C3_*_WIDE"?
 """
 
 import io
@@ -316,12 +323,12 @@ def assess_wide_cancer_endpoints(dataf):
     for basic, wide in pair_basic_wide_endpoints:
         # Checks that need **at least** the WIDE endpoint to be defined.
         wide_has_hilmo_definition, wide_hilmo_definition_values = (
-            check_endpoint_has_hilmo_definition(dataf, wide)
+            check_endpoint_or_descendants_have_hilmo_definition(dataf, wide)
         )
         if not wide_has_hilmo_definition:
             wide_without_hilmo_definition.append({"wide": wide, "basic": basic})
             wide_without_hilmo_definition_data.append(wide_hilmo_definition_values)
-        
+
         # Checks that need **both** the WIDE and basic endpoints to be defined.
         if basic in all_endpoints:
             has_same_cancer_definition, values_pair_cancer_definition = (
@@ -332,7 +339,7 @@ def assess_wide_cancer_endpoints(dataf):
                 different_cancer_definitions_data.append(values_pair_cancer_definition)
 
             basic_has_hilmo_definition, basic_hilmo_definition_values = (
-                check_endpoint_has_hilmo_definition(dataf, basic)
+                check_endpoint_or_descendants_have_hilmo_definition(dataf, basic)
             )
             if basic_has_hilmo_definition:
                 basic_with_hilmo_definition.append({"wide": wide, "basic": basic})
@@ -348,7 +355,6 @@ def assess_wide_cancer_endpoints(dataf):
         # Checks when the basic endpoint is not defined.
         else:
             without_basic_endpoints.append({"wide": wide, "basic": basic})
-
 
     # Sort by endpoint _WIDE name
     without_basic_endpoints = sorted(without_basic_endpoints, key=lambda dd: dd["wide"])
@@ -366,14 +372,14 @@ def assess_wide_cancer_endpoints(dataf):
     wide_without_hilmo_definition_data = sorted(
         wide_without_hilmo_definition_data, key=lambda dd: dd["endpoint"]
     )
-    #
+
     basic_with_hilmo_definition = sorted(
         basic_with_hilmo_definition, key=lambda dd: dd["basic"]
     )
     basic_with_hilmo_definition_data = sorted(
-        basic_with_hilmo_definition_data, key=lambda dd: dd["endpoint"]
-    )
-    #
+         basic_with_hilmo_definition_data, key=lambda dd: dd["endpoint"]
+     )
+    
     different_control_definition = sorted(
         different_control_definition, key=lambda dd: dd["wide"]
     )
@@ -500,7 +506,7 @@ def check_pair_has_same_values(dataf, basic, wide, columns):
     return (has_same_values, values)
 
 
-def check_endpoint_has_hilmo_definition(dataf, endpoint):
+def check_endpoint_or_descendants_have_hilmo_definition(dataf, endpoint):
     columns_hilmo = [
         "HD_ICD_10",
         "HD_ICD_9",
@@ -510,21 +516,45 @@ def check_endpoint_has_hilmo_definition(dataf, endpoint):
         "HD_ICD_8_EXCL",
     ]
 
-    values = (
-        dataf.filter(pl.col("NAME") == endpoint)
-        .select(pl.col(columns_hilmo))
-        .to_dicts()
-    )
-    values = values[0]  # only 1 endpoint => only 1 row
+    # Get descendants of this endpoint
+    map_parent_children = get_map_parent_children(dataf)
+    map_parent_descendants = get_map_parent_descendants(map_parent_children)
 
-    data = {"endpoint": endpoint, "values": values}
+    endpoint_and_descendants = set([endpoint])
+    descendants = map_parent_descendants.get(endpoint, set())
+    endpoint_and_descendants.update(descendants)
 
+    mark_no_suitable_code = "$!$"
+
+    # Check if there is any Hilmo code in this endpoint or any of its descendants
     has_hilmo_definition = (
-        dataf.filter(pl.col("NAME") == endpoint)
+        dataf.filter(pl.col("NAME").is_in(endpoint_and_descendants))
+        # Make sure to discard the "$!$" mark, as it is not a definition code
+        .with_columns(
+            pl.when((pl.col(columns_hilmo) == mark_no_suitable_code))
+            .then(None)
+            .otherwise(pl.col(columns_hilmo))
+            .name.keep()
+        )
         .select(pl.col(columns_hilmo).is_not_null())
-        .select(pl.any_horizontal(pl.all()))
+        .select(pl.any_horizontal(pl.all()).alias("AnyCol"))
+        .select(pl.any("AnyCol"))
         .item()
     )
+
+    table_columns = ["NAME"] + columns_hilmo
+    table = (
+        dataf.filter(pl.col("NAME").is_in(endpoint_and_descendants))
+        .select(table_columns)
+        .to_dicts()
+    )
+
+    table_map = {}
+    for row in table:
+        row_endpoint = row.pop("NAME")
+        table_map[row_endpoint] = row
+
+    data = {"endpoint": endpoint, "descendants": descendants, "table": table_map}
 
     return has_hilmo_definition, data
 
@@ -882,18 +912,33 @@ def get_map_child_ancestors(map_parent_children):
     map_child_ancestors = {}
     for child, parents in map_child_parents.items():
         if parents:
-            ancestors = rec_ancestors_of(child, set(), map_child_parents)
+            ancestors = rec_targets_of(child, map_child_parents)
             map_child_ancestors[child] = ancestors
 
     return map_child_ancestors
 
 
-def rec_ancestors_of(node, acc, map_child_parents):
-    if node not in map_child_parents:
+def get_map_parent_descendants(map_parent_children):
+    map_parent_descendants = {}
+
+    for parent, children in map_parent_children.items():
+        if children:
+            descendants = rec_targets_of(parent, map_parent_children)
+            map_parent_descendants[parent] = descendants
+
+    return map_parent_descendants
+
+
+def rec_targets_of(node, map_node_targets, acc=None):
+    if acc is None:
+        acc = set()
+
+    if node not in map_node_targets or len(map_node_targets[node]) == 0:
         return acc
 
     else:
-        for parent in map_child_parents[node]:
-            acc.add(parent)
-            acc = rec_ancestors_of(parent, acc, map_child_parents)
-            return acc
+        for target in map_node_targets[node]:
+            acc.add(target)
+            acc.update(rec_targets_of(target, map_node_targets, acc))
+
+    return acc

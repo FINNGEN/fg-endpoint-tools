@@ -299,6 +299,15 @@ p.error-count {
     margin: 0;
     text-align: center;
   }
+
+  & .include-endpoint {
+    display: flex;
+    column-gap: 1ch;
+  }
+  & .include-endpoint .include-mark {
+    color: #555;
+    padding-left: 1em;
+  }
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Utility classes ~~~ */
@@ -326,4 +335,3 @@ p.error-count {
 .utils-hidden {
   display: none;
 }
-

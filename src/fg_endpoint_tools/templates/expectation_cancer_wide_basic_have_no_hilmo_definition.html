@@ -12,6 +12,7 @@
     Found <b>{{ expectation.endpoints_in_error | length }}</b> basic endpoints (counterpart of their cancer <code>_WIDE</code> endpoints) that have a definition in some of the Hilmo columns when they should not.
   </p>
 
+  {% if expectation.endpoints_in_error %}
   <table>
     <tr>
       <th>Endpoint <code>NAME</code></th>
@@ -21,11 +22,31 @@
     </tr>
     {% for dd in expectation.data %}
     <tr>
-      <td><code>{{ dd.endpoint }}</code></td>
+      <td><code><b>{{ dd.endpoint }}</b></code></td>
       {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
       <td>
-        {% if dd['values'][col] %}
-        <code class="highlight-bad">{{ dd['values'][col] }}</code>
+        {% if dd.table[dd.endpoint][col] and dd.table[dd.endpoint][col] != '$!$' %}
+        <code class="highlight-bad">{{ dd.table[dd.endpoint][col] }}</code>
+        {% else %}
+        <span class="no-data"></span>
+        {% endif %}
+      </td>
+      {% endfor %}
+    </tr>
+
+    {# NOTE(Vincent 2025-02-23) An improvement here would be to reflect the level of include for each descdendant,
+    kind of displaying the DAG in the Endpoint NAME column.
+    #}
+    {% for descendant in dd.descendants | sort %}
+    <tr>
+      <td class="include-endpoint">
+        <span class="include-mark">&#x2b11;{# LEFTWARDS ARROW WITH TIP UPWARDS #}&nbsp;(includes)</span>
+        <code class="utils-break-word">{{ descendant }}</code>
+      </td>
+      {% for col in ['HD_ICD_10', 'HD_ICD_9', 'HD_ICD_8', 'HD_ICD_10_EXCL', 'HD_ICD_9_EXCL', 'HD_ICD_8_EXCL'] %}
+      <td>
+        {% if dd.table[descendant][col] and dd.table[descendant][col] != '$!$'  %}
+        <code class="highlight-bad">{{ dd.table[descendant][col] }}</code>
         {% else %}
         <span class="no-data"></span>
         {% endif %}
@@ -33,5 +54,9 @@
       {% endfor %}
     </tr>
     {% endfor %}
+
+    
+    {% endfor %}
   </table>
+  {% endif %}
 {% endblock %}
