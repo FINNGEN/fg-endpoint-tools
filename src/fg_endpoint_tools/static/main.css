@@ -166,17 +166,6 @@ body.page-home {
     border-bottom: 1px solid #e6e6e6;
   }
 
-  & .metadata-item .omit {
-    display: flex;
-  }
-
-  & .metadata-item .omit summary {
-    margin-left: 1ch;
-    border-bottom: 1px solid #515151;
-    cursor: pointer;
-  }
-
-
   & .metadata-columns-content {
     max-width: fit-content;
 

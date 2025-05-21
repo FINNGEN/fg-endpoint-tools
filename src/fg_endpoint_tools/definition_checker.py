@@ -104,6 +104,13 @@ def get_summary(dataf):
         dataf.filter(pl.col("OMIT") == "2").get_column("NAME").sort().to_list()
     )
 
+    inclavo_endpoints = (
+        dataf.filter(pl.col("NAME").str.contains("_INCLAVO"))
+        .get_column("NAME")
+        .sort()
+        .to_list()
+    )
+
     return {
         "n_columns": len(dataf.columns),
         "n_rows": dataf.height,
@@ -111,6 +118,7 @@ def get_summary(dataf):
         "has_core_info": has_core_info,
         "omit1_endpoints": omit1_endpoints,
         "omit2_endpoints": omit2_endpoints,
+        "inclavo_endpoints": inclavo_endpoints,
     }
 
 

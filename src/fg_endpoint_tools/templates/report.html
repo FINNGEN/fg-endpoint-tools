@@ -60,7 +60,7 @@ Report &bull; Endpoint Definition Checker
 
             <div class="metadata-item">
                 <p><code>OMIT=1</code> endpoints?</p>
-                <div class="omit">
+                <div>
                 {% if summary.omit1_endpoints %}
                     <p>Yes, <button data-modal-target="dialog-omit1">{{ summary.omit1_endpoints | length }} endpoints</button>.</p>
                     <dialog id="dialog-omit1">
@@ -79,9 +79,9 @@ Report &bull; Endpoint Definition Checker
                 </div>
             </div>
 
-            <div class="metadata-item omit">
+            <div class="metadata-item">
                 <p><code>OMIT=2</code> endpoints?</p>
-                <div class="omit">
+                <div>
                 {% if summary.omit2_endpoints %}
                     <p>Yes, <button data-modal-target="dialog-omit2">{{ summary.omit2_endpoints | length }} endpoints</button>.</p>
                     <dialog id="dialog-omit2">
@@ -96,10 +96,34 @@ Report &bull; Endpoint Definition Checker
                     </dialog>
 
                 {% else %}
-                    No
+                    <p>No</p>
                 {% endif %}
                 </div>
             </div>
+
+            <div class="metadata-item">
+                <p><code>INCLAVO</code> endpoints?</p>
+                <div>
+                    {% if summary.inclavo_endpoints %}
+                    <p>Yes, <button data-modal-target="dialog-inclavo">{{ summary.inclavo_endpoints | length }} endpoints</button>.</p>
+                    <dialog id="dialog-inclavo">
+                        <button autofocus>Close</button>
+                        <ul>
+                            {% for endpoint in summary.inclavo_endpoints %}
+                                <li>
+                                    <code>{{ endpoint }}</code>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </dialog>
+                    
+
+                    {% else %}
+                        <p>No</p>
+                    {% endif %}
+                </div>
+            </div>
+            
     
         </article>
     </div>
