@@ -723,7 +723,7 @@ def assess_include_omit2(
 
     endpoints_in_error = sorted(endpoints_in_error)
 
-    status = status.ALL_GOOD if len(endpoints_in_error) == 0 else Status.FAIL
+    status = Status.ALL_GOOD if len(endpoints_in_error) == 0 else Status.FAIL
 
     return Expectation(
         idname="include_omit2",
