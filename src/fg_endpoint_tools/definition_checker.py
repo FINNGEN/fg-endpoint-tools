@@ -314,37 +314,41 @@ def assess_wide_cancer_endpoints(dataf):
     different_control_definition_data = []
 
     for basic, wide in pair_basic_wide_endpoints:
-        if basic not in all_endpoints:
-            without_basic_endpoints.append({"wide": wide, "basic": basic})
-            continue
-
-        has_same_cancer_definition, values_pair_cancer_definition = (
-            check_pair_has_same_values(dataf, basic, wide, columns_cancer)
-        )
-        if not has_same_cancer_definition:
-            different_cancer_definitions.append({"wide": wide, "basic": basic})
-            different_cancer_definitions_data.append(values_pair_cancer_definition)
-
+        # Checks that need **at least** the WIDE endpoint to be defined.
         wide_has_hilmo_definition, wide_hilmo_definition_values = (
             check_endpoint_has_hilmo_definition(dataf, wide)
         )
         if not wide_has_hilmo_definition:
             wide_without_hilmo_definition.append({"wide": wide, "basic": basic})
             wide_without_hilmo_definition_data.append(wide_hilmo_definition_values)
+        
+        # Checks that need **both** the WIDE and basic endpoints to be defined.
+        if basic in all_endpoints:
+            has_same_cancer_definition, values_pair_cancer_definition = (
+                check_pair_has_same_values(dataf, basic, wide, columns_cancer)
+            )
+            if not has_same_cancer_definition:
+                different_cancer_definitions.append({"wide": wide, "basic": basic})
+                different_cancer_definitions_data.append(values_pair_cancer_definition)
 
-        basic_has_hilmo_definition, basic_hilmo_definition_values = (
-            check_endpoint_has_hilmo_definition(dataf, basic)
-        )
-        if basic_has_hilmo_definition:
-            basic_with_hilmo_definition.append({"wide": wide, "basic": basic})
-            basic_with_hilmo_definition_data.append(basic_hilmo_definition_values)
+            basic_has_hilmo_definition, basic_hilmo_definition_values = (
+                check_endpoint_has_hilmo_definition(dataf, basic)
+            )
+            if basic_has_hilmo_definition:
+                basic_with_hilmo_definition.append({"wide": wide, "basic": basic})
+                basic_with_hilmo_definition_data.append(basic_hilmo_definition_values)
 
-        has_same_control_definition, values_pair_control_definition = (
-            check_pair_has_same_values(dataf, basic, wide, columns_control)
-        )
-        if not has_same_control_definition:
-            different_control_definition.append({"wide": wide, "basic": basic})
-            different_control_definition_data.append(values_pair_control_definition)
+            has_same_control_definition, values_pair_control_definition = (
+                check_pair_has_same_values(dataf, basic, wide, columns_control)
+            )
+            if not has_same_control_definition:
+                different_control_definition.append({"wide": wide, "basic": basic})
+                different_control_definition_data.append(values_pair_control_definition)
+
+        # Checks when the basic endpoint is not defined.
+        else:
+            without_basic_endpoints.append({"wide": wide, "basic": basic})
+
 
     # Sort by endpoint _WIDE name
     without_basic_endpoints = sorted(without_basic_endpoints, key=lambda dd: dd["wide"])
