@@ -103,7 +103,7 @@ body.page-home {
     text-wrap: balance;
 
     background: white;
-    border: 2px dashed #aaa;
+    border: 5px dashed #aaa;
     border-radius: 12px;
 
     cursor: pointer;
