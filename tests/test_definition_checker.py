@@ -3,245 +3,524 @@ import polars as pl
 from fg_endpoint_tools import definition_checker
 
 
+COLUMNS_CANCER = [
+    "CANC_TOPO",
+    "CANC_TOPO_EXCL",
+    "CANC_MORPH",
+    "CANC_MORPH_EXCL",
+    "CANC_BEHAV",
+]
+
+COLUMNS_CONTROL = [
+    "CONTROL_EXCLUDE",
+    "CONTROL_PRECONDITIONS",
+    "CONTROL_CONDITIONS",
+]
+
+
 def test_duplicate_endpoint_name():
+    # 1.
     dataf_with_dups = pl.DataFrame(
         {"NAME": ["my_endpoint", "another_endpoint", "my_endpoint"]}
     )
 
-    dataf_no_dups = pl.DataFrame({"NAME": ["first_endpoint", "second_endpoint"]})
+    expected_data = ["my_endpoint"]
+    expected_excel_b64 = definition_checker.write_excel_as_b64(
+        dataf_with_dups, expected_data
+    )
+    expected_result = definition_checker.Expectation(
+        idname="name_duplicates",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_endpoint"],
+        data=["my_endpoint"],
+        excel_file_b64=expected_excel_b64,
+    )
 
-    assert ["my_endpoint"] == definition_checker.find_duplicates_by_name(
+    assert expected_result == definition_checker.assess_duplicates_by_name(
         dataf_with_dups
     )
-    assert [] == definition_checker.find_duplicates_by_name(dataf_no_dups)
+
+    # 2.
+    dataf_no_dups = pl.DataFrame({"NAME": ["first_endpoint", "second_endpoint"]})
+
+    expected_data = []
+    expected_excel_b64 = definition_checker.write_excel_as_b64(
+        dataf_no_dups, expected_data
+    )
+    expected_result = definition_checker.Expectation(
+        idname="name_duplicates",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=[],
+        data=expected_data,
+        excel_file_b64=expected_excel_b64,
+    )
 
 
 def test_no_exallc():
+    # 1.
     dataf_with_exallc = pl.DataFrame({"NAME": "my_EXALLC"})
 
+    expected_data = ["my_EXALLC"]
+    expected_excel_b64 = definition_checker.write_excel_as_b64(
+        dataf_with_exallc, expected_data
+    )
+    expected_result = definition_checker.Expectation(
+        idname="name_any_exallc",
+        status=definition_checker.Status.WARNING,
+        n_errors=1,
+        endpoints_in_error=expected_data,
+        data=expected_data,
+        excel_file_b64=expected_excel_b64,
+    )
+
+    assert expected_result == definition_checker.assess_any_exallc(dataf_with_exallc)
+
+    # 2.
     dataf_no_exallc = pl.DataFrame({"NAME": "my_endpoint"})
 
-    assert ["my_EXALLC"] == definition_checker.find_any_exallc(dataf_with_exallc)
-    assert [] == definition_checker.find_any_exallc(dataf_no_exallc)
+    expected_data = []
+    expected_excel_b64 = definition_checker.write_excel_as_b64(
+        dataf_no_exallc, expected_data
+    )
+    expected_result = definition_checker.Expectation(
+        idname="name_any_exallc",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=expected_data,
+        data=expected_data,
+        excel_file_b64=expected_excel_b64,
+    )
+
+    assert expected_result == definition_checker.assess_any_exallc(dataf_no_exallc)
 
 
 def test_no_exmore():
+    # 1.
     dataf_with_exmore = pl.DataFrame({"NAME": "my_EXMORE"})
 
+    expected_data = ["my_EXMORE"]
+    expected_excel_b64 = definition_checker.write_excel_as_b64(
+        dataf_with_exmore, expected_data
+    )
+    expected_result = definition_checker.Expectation(
+        idname="name_any_exmore",
+        status=definition_checker.Status.WARNING,
+        n_errors=1,
+        endpoints_in_error=expected_data,
+        data=expected_data,
+        excel_file_b64=expected_excel_b64,
+    )
+
+    assert expected_result == definition_checker.assess_any_exmore(dataf_with_exmore)
+
+    # 2.
     dataf_no_exmore = pl.DataFrame({"NAME": "my_endpoint"})
 
-    assert ["my_EXMORE"] == definition_checker.find_any_exmore(dataf_with_exmore)
-    assert [] == definition_checker.find_any_exmore(dataf_no_exmore)
+    expected_data = []
+    expected_excel_b64 = definition_checker.write_excel_as_b64(
+        dataf_no_exmore, expected_data
+    )
+    expected_result = definition_checker.Expectation(
+        idname="name_any_exmore",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=expected_data,
+        data=expected_data,
+        excel_file_b64=expected_excel_b64,
+    )
+
+    assert expected_result == definition_checker.assess_any_exmore(dataf_no_exmore)
 
 
-def test_wide_cancer_endpoints__good_definitions():
-    endpoint_basic = {
-        "NAME": "my_endpoint",
-        # Hilmo case definition
-        "HD_ICD_10": None,
-        "HD_ICD_9": None,
-        "HD_ICD_8": None,
-        "HD_ICD_10_EXCL": None,
-        "HD_ICD_9_EXCL": None,
-        "HD_ICD_8_EXCL": None,
-        # Cancer case definition
-        "CANC_TOPO": "some_canc_topo",
-        "CANC_TOPO_EXCL": "some_canc_topo_excl",
-        "CANC_MORPH": "some_canc_morph",
-        "CANC_MORPH_EXCL": "some_canc_morph_excl",
-        "CANC_BEHAV": "some_canc_behav",
-        # Control definition
-        "CONTROL_EXCLUDE": "some_control_exclude",
-        "CONTROL_PRECONDITIONS": "some_control_preconditions",
-        "CONTROL_CONDITIONS": "some_control_conditions",
-    }
+def test_cancer_wide__wide_have_basic_endpoints():
+    # 1. Bad
+    dataf_bad = pl.DataFrame({"NAME": ["my_endpoint_bad_WIDE"]})
 
-    endpoint_wide = {
-        "NAME": "my_endpoint_WIDE",
-        # Hilmo case definition
-        "HD_ICD_10": "some_hd_icd_10",
-        "HD_ICD_9": "some_hd_icd_9",
-        "HD_ICD_8": "some_hd_icd_8",
-        "HD_ICD_10_EXCL": "some_hd_icd_10_excl",
-        "HD_ICD_9_EXCL": "some_hd_icd_9_excl",
-        "HD_ICD_8_EXCL": "some_hd_icd_8_excl",
-        # Cancer case definition
-        "CANC_TOPO": "some_canc_topo",
-        "CANC_TOPO_EXCL": "some_canc_topo_excl",
-        "CANC_MORPH": "some_canc_morph",
-        "CANC_MORPH_EXCL": "some_canc_morph_excl",
-        "CANC_BEHAV": "some_canc_behav",
-        # Control definition
-        "CONTROL_EXCLUDE": "some_control_exclude",
-        "CONTROL_PRECONDITIONS": "some_control_preconditions",
-        "CONTROL_CONDITIONS": "some_control_conditions",
-    }
+    excel_bad = definition_checker.write_excel_as_b64(
+        dataf_bad, ["my_endpoint_bad_WIDE"]
+    )
 
-    dataf = pl.from_dicts([endpoint_basic, endpoint_wide])
+    expected_bad = definition_checker.Expectation(
+        idname="cancer_wide_has_basic_endpoint",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_endpoint_bad_WIDE"],
+        data=[{"wide": "my_endpoint_bad_WIDE", "basic": "my_endpoint_bad"}],
+        excel_file_b64=excel_bad,
+    )
 
-    expected = []
-    actual = definition_checker.check_wide_cancer_endpoints(dataf)
+    assert expected_bad == definition_checker.assess_cancer_wide_have_basic_endpoints(
+        dataf_bad,
+        set(dataf_bad.get_column("NAME")),
+        [["my_endpoint_bad", "my_endpoint_bad_WIDE"]],
+    )
 
-    assert expected == actual
+    # 2. Good
+    dataf_good = pl.DataFrame({"NAME": ["my_endpoint_good_WIDE", "my_endpoint_good"]})
+
+    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
+
+    expected_good = definition_checker.Expectation(
+        idname="cancer_wide_has_basic_endpoint",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=[],
+        data=[],
+        excel_file_b64=excel_good,
+    )
+
+    assert expected_good == definition_checker.assess_cancer_wide_have_basic_endpoints(
+        dataf_good,
+        set(dataf_good.get_column("NAME")),
+        [["my_endpoint_good_WIDE", "my_endpoint_good"]],
+    )
 
 
-def test_wide_cancer_endpoints__bad_basic_definition():
-    endpoint_basic = {
-        "NAME": "my_endpoint",
-        # Hilmo case definition
-        "HD_ICD_10": "should be empty",  # <-- introduced bad value here
-        "HD_ICD_9": None,
-        "HD_ICD_8": None,
-        "HD_ICD_10_EXCL": None,
-        "HD_ICD_9_EXCL": None,
-        "HD_ICD_8_EXCL": None,
-        # Cancer case definition
-        "CANC_TOPO": "ANOTHER_canc_topo",  # <-- introduced bad value here
-        "CANC_TOPO_EXCL": "some_canc_topo_excl",
-        "CANC_MORPH": "some_canc_morph",
-        "CANC_MORPH_EXCL": "some_canc_morph_excl",
-        "CANC_BEHAV": "some_canc_behav",
-        # Control definition
-        "CONTROL_EXCLUDE": "ANOTHER_control_exclude",  # <-- introduced bad value here
-        "CONTROL_PRECONDITIONS": "some_control_preconditions",
-        "CONTROL_CONDITIONS": "some_control_conditions",
-    }
-
-    endpoint_wide = {
-        "NAME": "my_endpoint_WIDE",
-        # Hilmo case definition
-        "HD_ICD_10": "some_hd_icd_10",
-        "HD_ICD_9": "some_hd_icd_9",
-        "HD_ICD_8": "some_hd_icd_8",
-        "HD_ICD_10_EXCL": "some_hd_icd_10_excl",
-        "HD_ICD_9_EXCL": "some_hd_icd_9_excl",
-        "HD_ICD_8_EXCL": "some_hd_icd_8_excl",
-        # Cancer case definition
-        "CANC_TOPO": "some_canc_topo",
-        "CANC_TOPO_EXCL": "some_canc_topo_excl",
-        "CANC_MORPH": "some_canc_morph",
-        "CANC_MORPH_EXCL": "some_canc_morph_excl",
-        "CANC_BEHAV": "some_canc_behav",
-        # Control definition
-        "CONTROL_EXCLUDE": "some_control_exclude",
-        "CONTROL_PRECONDITIONS": "some_control_preconditions",
-        "CONTROL_CONDITIONS": "some_control_conditions",
-    }
-
-    dataf = pl.from_dicts([endpoint_basic, endpoint_wide])
-
-    expected = [
+def test_cancer_wide__same_cancer_definition():
+    # 1. Bad
+    dataf_bad = pl.DataFrame(
         {
+            "NAME": ["my_endpoint_WIDE", "my_endpoint"],
+            "CANC_TOPO": ["a code", "a DIFFERENT code"],
+            "CANC_TOPO_EXCL": [None, None],
+            "CANC_MORPH": [None, None],
+            "CANC_MORPH_EXCL": [None, None],
+            "CANC_BEHAV": [None, None],
+        }
+    )
+
+    data_bad = [
+        {
+            "wide": "my_endpoint_WIDE",
             "basic": "my_endpoint",
-            "wide": "my_endpoint_WIDE",
-            "have_same_cancer_definition": False,
-            "wide_has_hilmo_definition": True,
-            "basic_has_hilmo_definition": True,
-            "have_same_control_definition": False,
+            "cols_wide": {
+                "CANC_TOPO": "a code",
+                "CANC_TOPO_EXCL": None,
+                "CANC_MORPH": None,
+                "CANC_MORPH_EXCL": None,
+                "CANC_BEHAV": None,
+            },
+            "cols_basic": {
+                "CANC_TOPO": "a DIFFERENT code",
+                "CANC_TOPO_EXCL": None,
+                "CANC_MORPH": None,
+                "CANC_MORPH_EXCL": None,
+                "CANC_BEHAV": None,
+            },
+            "diff_cols_wide": {"CANC_TOPO": "a code"},
+            "diff_cols_basic": {"CANC_TOPO": "a DIFFERENT code"},
+            "diffs": {
+                "CANC_TOPO": {
+                    "string_a": {
+                        "original": "a code",
+                        "prefix_common": "a ",
+                        "middle_diff": "",
+                        "suffix_common": " code",
+                    },
+                    "string_b": {
+                        "original": "a DIFFERENT code",
+                        "prefix_common": "a ",
+                        "middle_diff": "DIFFERENT",
+                        "suffix_common": " code",
+                    },
+                }
+            },
         }
     ]
-    actual = definition_checker.check_wide_cancer_endpoints(dataf)
 
-    assert expected == actual
+    excel_bad = definition_checker.write_excel_as_b64(
+        dataf_bad, ["my_endpoint_WIDE", "my_endpoint"]
+    )
 
+    expected_bad = definition_checker.Expectation(
+        idname="cancer_wide_same_cancer_definition",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_endpoint_WIDE"],
+        data=data_bad,
+        excel_file_b64=excel_bad,
+    )
 
-def test_wide_cancer_endpoints__bad_wide_definition():
-    endpoint_basic = {
-        "NAME": "my_endpoint",
-        # Hilmo case definition
-        "HD_ICD_10": None,
-        "HD_ICD_9": None,
-        "HD_ICD_8": None,
-        "HD_ICD_10_EXCL": None,
-        "HD_ICD_9_EXCL": None,
-        "HD_ICD_8_EXCL": None,
-        # Cancer case definition
-        "CANC_TOPO": "some_canc_topo",
-        "CANC_TOPO_EXCL": "some_canc_topo_excl",
-        "CANC_MORPH": "some_canc_morph",
-        "CANC_MORPH_EXCL": "some_canc_morph_excl",
-        "CANC_BEHAV": "some_canc_behav",
-        # Control definition
-        "CONTROL_EXCLUDE": "some_control_exclude",
-        "CONTROL_PRECONDITIONS": "some_control_preconditions",
-        "CONTROL_CONDITIONS": "some_control_conditions",
-    }
+    assert expected_bad == definition_checker.assess_cancer_wide_same_cancer_definition(
+        dataf_bad, [["my_endpoint", "my_endpoint_WIDE"]], COLUMNS_CANCER
+    )
 
-    endpoint_wide = {
-        "NAME": "my_endpoint_WIDE",
-        # Hilmo case definition
-        "HD_ICD_10": None,
-        "HD_ICD_9": None,
-        "HD_ICD_8": None,
-        "HD_ICD_10_EXCL": None,
-        "HD_ICD_9_EXCL": None,
-        "HD_ICD_8_EXCL": None,
-        # Cancer case definition
-        "CANC_TOPO": "ANOTHER_canc_topo",
-        "CANC_TOPO_EXCL": "some_canc_topo_excl",
-        "CANC_MORPH": "some_canc_morph",
-        "CANC_MORPH_EXCL": "some_canc_morph_excl",
-        "CANC_BEHAV": "some_canc_behav",
-        # Control definition
-        "CONTROL_EXCLUDE": "ANOTHER_control_exclude",
-        "CONTROL_PRECONDITIONS": "some_control_preconditions",
-        "CONTROL_CONDITIONS": "some_control_conditions",
-    }
-
-    dataf = pl.from_dicts([endpoint_basic, endpoint_wide])
-
-    expected = [
+    # 2. Good
+    dataf_good = pl.DataFrame(
         {
+            "NAME": ["my_endpoint_WIDE", "my_endpoint"],
+            "CANC_TOPO": ["same code", "same code"],
+            "CANC_TOPO_EXCL": [None, None],
+            "CANC_MORPH": [None, None],
+            "CANC_MORPH_EXCL": [None, None],
+            "CANC_BEHAV": [None, None],
+        }
+    )
+
+    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
+
+    expected_good = definition_checker.Expectation(
+        idname="cancer_wide_same_cancer_definition",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=[],
+        data=[],
+        excel_file_b64=excel_good,
+    )
+
+    assert (
+        expected_good
+        == definition_checker.assess_cancer_wide_same_cancer_definition(
+            dataf_good, [["my_endpoint", "my_endpoint_WIDE"]], COLUMNS_CANCER
+        )
+    )
+
+
+def test_cancer_wide__same_control_definition():
+    # 1. Bad
+    dataf_bad = pl.DataFrame(
+        {
+            "NAME": ["my_endpoint_WIDE", "my_endpoint"],
+            "CONTROL_EXCLUDE": ["a code", "a DIFFERENT code"],
+            "CONTROL_PRECONDITIONS": [None, None],
+            "CONTROL_CONDITIONS": [None, None],
+        }
+    )
+
+    data_bad = [
+        {
+            "wide": "my_endpoint_WIDE",
             "basic": "my_endpoint",
-            "wide": "my_endpoint_WIDE",
-            "have_same_cancer_definition": False,
-            "wide_has_hilmo_definition": False,
-            "basic_has_hilmo_definition": False,
-            "have_same_control_definition": False,
+            "cols_wide": {
+                "CONTROL_EXCLUDE": "a code",
+                "CONTROL_PRECONDITIONS": None,
+                "CONTROL_CONDITIONS": None,
+            },
+            "cols_basic": {
+                "CONTROL_EXCLUDE": "a DIFFERENT code",
+                "CONTROL_PRECONDITIONS": None,
+                "CONTROL_CONDITIONS": None,
+            },
+            "diff_cols_wide": {"CONTROL_EXCLUDE": "a code"},
+            "diff_cols_basic": {"CONTROL_EXCLUDE": "a DIFFERENT code"},
+            "diffs": {
+                "CONTROL_EXCLUDE": {
+                    "string_a": {
+                        "original": "a code",
+                        "prefix_common": "a ",
+                        "middle_diff": "",
+                        "suffix_common": " code",
+                    },
+                    "string_b": {
+                        "original": "a DIFFERENT code",
+                        "prefix_common": "a ",
+                        "middle_diff": "DIFFERENT",
+                        "suffix_common": " code",
+                    },
+                }
+            },
         }
     ]
-    actual = definition_checker.check_wide_cancer_endpoints(dataf)
 
-    assert expected == actual
+    excel_bad = definition_checker.write_excel_as_b64(
+        dataf_bad, ["my_endpoint_WIDE", "my_endpoint"]
+    )
 
+    expected_bad = definition_checker.Expectation(
+        idname="cancer_wide_same_control_definition",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_endpoint_WIDE"],
+        data=data_bad,
+        excel_file_b64=excel_bad,
+    )
 
-def test_wide_cancer_endpoints__missing_basic():
-    endpoint_wide = {
-        "NAME": "my_endpoint_WIDE",
-        # Hilmo case definition
-        "HD_ICD_10": "some_hd_icd_10",
-        "HD_ICD_9": "some_hd_icd_9",
-        "HD_ICD_8": "some_hd_icd_8",
-        "HD_ICD_10_EXCL": "some_hd_icd_10_excl",
-        "HD_ICD_9_EXCL": "some_hd_icd_9_excl",
-        "HD_ICD_8_EXCL": "some_hd_icd_8_excl",
-        # Cancer case definition
-        "CANC_TOPO": "some_canc_topo",
-        "CANC_TOPO_EXCL": "some_canc_topo_excl",
-        "CANC_MORPH": "some_canc_morph",
-        "CANC_MORPH_EXCL": "some_canc_morph_excl",
-        "CANC_BEHAV": "some_canc_behav",
-        # Control definition
-        "CONTROL_EXCLUDE": "some_control_exclude",
-        "CONTROL_PRECONDITIONS": "some_control_preconditions",
-        "CONTROL_CONDITIONS": "some_control_conditions",
-    }
+    assert (
+        expected_bad
+        == definition_checker.assess_cancer_wide_same_control_definition(
+            dataf_bad, [["my_endpoint", "my_endpoint_WIDE"]], COLUMNS_CONTROL
+        )
+    )
 
-    dataf = pl.from_dicts([endpoint_wide])
-
-    expected = [
+    # 2. Good
+    dataf_good = pl.DataFrame(
         {
-            "basic": None,
-            "wide": "my_endpoint_WIDE",
-            "have_same_cancer_definition": None,
-            "wide_has_hilmo_definition": None,
-            "basic_has_hilmo_definition": None,
-            "have_same_control_definition": None,
+            "NAME": ["my_endpoint_WIDE", "my_endpoint"],
+            "CONTROL_EXCLUDE": ["same code", "same code"],
+            "CONTROL_PRECONDITIONS": [None, None],
+            "CONTROL_CONDITIONS": [None, None],
         }
-    ]
-    actual = definition_checker.check_wide_cancer_endpoints(dataf)
+    )
 
-    assert expected == actual
+    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
+
+    expected_good = definition_checker.Expectation(
+        idname="cancer_wide_same_control_definition",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=[],
+        data=[],
+        excel_file_b64=excel_good,
+    )
+
+    assert (
+        expected_good
+        == definition_checker.assess_cancer_wide_same_control_definition(
+            dataf_good, [["my_endpoint", "my_endpoint_WIDE"]], COLUMNS_CONTROL
+        )
+    )
+
+
+def test_cancer_wide__wide_have_hilmo():
+    # 1.
+    dataf_bad = pl.DataFrame(
+        {
+            "NAME": "my_endpoint_bad",
+            "HD_ICD_10": None,
+            "HD_ICD_9": None,
+            "HD_ICD_8": None,
+            "HD_ICD_10_EXCL": None,
+            "HD_ICD_9_EXCL": None,
+            "HD_ICD_8_EXCL": None,
+            "INCLUDE": None,
+        }
+    )
+
+    excel_bad = definition_checker.write_excel_as_b64(dataf_bad, ["my_endpoint_bad"])
+
+    expected_bad = definition_checker.Expectation(
+        idname="cancer_wide_have_hilmo_definition",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_endpoint_bad"],
+        data=[
+            {
+                "endpoint": "my_endpoint_bad",
+                "descendants": set(),
+                "table": {
+                    "my_endpoint_bad": {
+                        "HD_ICD_10": None,
+                        "HD_ICD_9": None,
+                        "HD_ICD_8": None,
+                        "HD_ICD_10_EXCL": None,
+                        "HD_ICD_9_EXCL": None,
+                        "HD_ICD_8_EXCL": None,
+                    }
+                },
+            }
+        ],
+        excel_file_b64=excel_bad,
+    )
+
+    assert expected_bad == definition_checker.assess_cancer_wide_have_hilmo(
+        dataf_bad, ["my_endpoint_bad"]
+    )
+
+    # 2.
+    dataf_good = pl.DataFrame(
+        {
+            "NAME": "my_endpoint_good",
+            "HD_ICD_10": "some Hilmo code",
+            "HD_ICD_9": None,
+            "HD_ICD_8": None,
+            "HD_ICD_10_EXCL": None,
+            "HD_ICD_9_EXCL": None,
+            "HD_ICD_8_EXCL": None,
+            "INCLUDE": None,
+        }
+    )
+
+    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
+
+    expected_good = definition_checker.Expectation(
+        idname="cancer_wide_have_hilmo_definition",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=[],
+        data=[],
+        excel_file_b64=excel_good,
+    )
+
+    assert expected_good == definition_checker.assess_cancer_wide_have_hilmo(
+        dataf_good, ["my_endpoint_good"]
+    )
+
+
+def test_wide_cancer__basic_have_no_hilmo():
+    # 1. Bad
+    dataf_bad = pl.DataFrame(
+        {
+            "NAME": "my_endpoint_bad",
+            "HD_ICD_10": "some unexpected code",
+            "HD_ICD_9": None,
+            "HD_ICD_8": None,
+            "HD_ICD_10_EXCL": None,
+            "HD_ICD_9_EXCL": None,
+            "HD_ICD_8_EXCL": None,
+            "INCLUDE": None,
+        }
+    )
+
+    excel_bad = definition_checker.write_excel_as_b64(dataf_bad, ["my_endpoint_bad"])
+
+    expected_bad = definition_checker.Expectation(
+        idname="cancer_wide_basic_have_no_hilmo_definition",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_endpoint_bad"],
+        data=[
+            {
+                "endpoint": "my_endpoint_bad",
+                "descendants": set(),
+                "table": {
+                    "my_endpoint_bad": {
+                        "HD_ICD_10": "some unexpected code",
+                        "HD_ICD_9": None,
+                        "HD_ICD_8": None,
+                        "HD_ICD_10_EXCL": None,
+                        "HD_ICD_9_EXCL": None,
+                        "HD_ICD_8_EXCL": None,
+                    }
+                },
+            }
+        ],
+        excel_file_b64=excel_bad,
+    )
+
+    assert expected_bad == definition_checker.assess_cancer_wide_basic_have_no_hilmo(
+        dataf_bad, ["my_endpoint_bad"]
+    )
+
+    # 2. Good
+    dataf_good = pl.DataFrame(
+        {
+            "NAME": "my_endpoint_good",
+            "HD_ICD_10": None,
+            "HD_ICD_9": None,
+            "HD_ICD_8": None,
+            "HD_ICD_10_EXCL": None,
+            "HD_ICD_9_EXCL": None,
+            "HD_ICD_8_EXCL": None,
+            "INCLUDE": None,
+        }
+    )
+
+    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
+
+    expected_good = definition_checker.Expectation(
+        idname="cancer_wide_basic_have_no_hilmo_definition",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=[],
+        data=[],
+        excel_file_b64=excel_good,
+    )
+
+    assert expected_good == definition_checker.assess_cancer_wide_basic_have_no_hilmo(
+        dataf_good, ["my_endpoint_good"]
+    )
 
 
 def test_util_rec_targets_of():
