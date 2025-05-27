@@ -559,3 +559,65 @@ def test_util_rec_targets_of():
 
     c3_expected = set()
     assert c3_expected == definition_checker.rec_targets_of("Child3", map_node_targets)
+
+
+def test_regression__wide_have_hilmo_not_triggering():
+    # NOTE(Vincent 2025-05-27)  Bug was that the "wide have hilmo" check was not triggering
+    # when there was no basic endpoint for a wide endpoint.
+    dataf = pl.DataFrame(
+        {
+            "NAME": ["my_endpoint_WIDE", "my_endpoint"],
+            "INCLUDE": [None, None],
+            "HD_ICD_10": [None, None],
+            "HD_ICD_9": [None, None],
+            "HD_ICD_8": [None, None],
+            "HD_ICD_10_EXCL": [None, None],
+            "HD_ICD_9_EXCL": [None, None],
+            "HD_ICD_8_EXCL": [None, None],
+            "CANC_TOPO": [None, None],
+            "CANC_TOPO_EXCL": [None, None],
+            "CANC_MORPH": [None, None],
+            "CANC_MORPH_EXCL": [None, None],
+            "CANC_BEHAV": [None, None],
+            "CONTROL_EXCLUDE": [None, None],
+            "CONTROL_PRECONDITIONS": [None, None],
+            "CONTROL_CONDITIONS": [None, None],
+        }
+    )
+
+    data_expected = [
+        {
+            "endpoint": "my_endpoint_WIDE",
+            "descendants": set(),
+            "table": {
+                "my_endpoint_WIDE": {
+                    "HD_ICD_10": None,
+                    "HD_ICD_9": None,
+                    "HD_ICD_8": None,
+                    "HD_ICD_10_EXCL": None,
+                    "HD_ICD_9_EXCL": None,
+                    "HD_ICD_8_EXCL": None,
+                }
+            },
+        }
+    ]
+
+    excel_b64_expected = definition_checker.write_excel_as_b64(
+        dataf, ["my_endpoint_WIDE"]
+    )
+
+    expected = definition_checker.Expectation(
+        idname="cancer_wide_have_hilmo_definition",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_endpoint_WIDE"],
+        data=data_expected,
+        excel_file_b64=excel_b64_expected,
+    )
+
+    triggered_expectation = None
+    for xx in definition_checker.assess_wide_cancer_endpoints(dataf):
+        if xx.idname == "cancer_wide_have_hilmo_definition":
+            triggered_expectation = xx
+
+    assert expected == triggered_expectation
