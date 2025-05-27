@@ -292,38 +292,23 @@ def assess_wide_cancer_endpoints(dataf):
         "CONTROL_CONDITIONS",
     ]
 
-    all_endpoints = set(dataf.get_column("NAME"))
-
-    possible_pairs_basic_wide, existing_pairs_basic_wide = list_cancer_wide_pairs(
-        all_endpoints
-    )
-
     expectations = [
-        assess_cancer_wide_have_basic_endpoints(
-            dataf, all_endpoints, possible_pairs_basic_wide
-        ),
-        assess_cancer_wide_same_cancer_definition(
-            dataf, existing_pairs_basic_wide, columns_cancer
-        ),
-        assess_cancer_wide_same_control_definition(
-            dataf, existing_pairs_basic_wide, columns_control
-        ),
-        assess_cancer_wide_have_hilmo(
-            dataf, [wide for _, wide in possible_pairs_basic_wide]
-        ),
-        assess_cancer_wide_basic_have_no_hilmo(
-            dataf, [basic for basic, _ in existing_pairs_basic_wide]
-        ),
+        assess_cancer_wide_have_basic_endpoints(dataf),
+        assess_cancer_wide_same_cancer_definition(dataf, columns_cancer),
+        assess_cancer_wide_same_control_definition(dataf, columns_control),
+        assess_cancer_wide_have_hilmo(dataf),
+        assess_cancer_wide_basic_have_no_hilmo(dataf),
     ]
 
     return expectations
 
 
-def assess_cancer_wide_have_basic_endpoints(
-    dataf, all_endpoints, possible_pairs_basic_wide
-):
+def assess_cancer_wide_have_basic_endpoints(dataf):
     endpoints_in_error = []
     data = []
+
+    all_endpoints = set(dataf.get_column("NAME"))
+    possible_pairs_basic_wide = list_cancer_wide_possible_pairs(dataf)
 
     for basic, wide in possible_pairs_basic_wide:
         if basic not in all_endpoints:
@@ -347,13 +332,13 @@ def assess_cancer_wide_have_basic_endpoints(
     )
 
 
-def assess_cancer_wide_same_cancer_definition(
-    dataf, list_pairs_basic_wide, columns_cancer
-):
+def assess_cancer_wide_same_cancer_definition(dataf, columns_cancer):
     endpoints_in_error = []
     data = []
 
-    for basic, wide in list_pairs_basic_wide:
+    existing_pairs_basic_wide = list_cancer_wide_existing_pairs(dataf)
+
+    for basic, wide in existing_pairs_basic_wide:
         has_same_cancer_definition, values = check_pair_has_same_values(
             dataf, basic, wide, columns_cancer
         )
@@ -384,13 +369,13 @@ def assess_cancer_wide_same_cancer_definition(
     )
 
 
-def assess_cancer_wide_same_control_definition(
-    dataf, list_pairs_basic_wide, columns_control
-):
+def assess_cancer_wide_same_control_definition(dataf, columns_control):
     endpoints_in_error = []
     data = []
 
-    for basic, wide in list_pairs_basic_wide:
+    existing_pairs_basic_wide = list_cancer_wide_existing_pairs(dataf)
+
+    for basic, wide in existing_pairs_basic_wide:
         has_same_control_definition, values = check_pair_has_same_values(
             dataf, basic, wide, columns_control
         )
@@ -421,9 +406,12 @@ def assess_cancer_wide_same_control_definition(
     )
 
 
-def assess_cancer_wide_have_hilmo(dataf, list_wide_endpoints):
+def assess_cancer_wide_have_hilmo(dataf):
     endpoints_in_error = []
     data = []
+
+    possible_pairs_basic_wide = list_cancer_wide_possible_pairs(dataf)
+    list_wide_endpoints = [wide for _, wide in possible_pairs_basic_wide]
 
     for wide_endpoint in list_wide_endpoints:
         has_definition, wide_endpoint_data = (
@@ -450,9 +438,12 @@ def assess_cancer_wide_have_hilmo(dataf, list_wide_endpoints):
     )
 
 
-def assess_cancer_wide_basic_have_no_hilmo(dataf, list_basic_endpoints):
+def assess_cancer_wide_basic_have_no_hilmo(dataf):
     endpoints_in_error = []
     data = []
+
+    existing_pairs_basic_wide = list_cancer_wide_existing_pairs(dataf)
+    list_basic_endpoints = [basic for basic, _ in existing_pairs_basic_wide]
 
     for basic_endpoint in list_basic_endpoints:
         has_definition, basic_endpoint_data = (
@@ -479,9 +470,34 @@ def assess_cancer_wide_basic_have_no_hilmo(dataf, list_basic_endpoints):
     )
 
 
-def list_cancer_wide_pairs(all_endpoints):
-    possible_pairs_basic_wide = []
+def list_cancer_wide_existing_pairs(dataf):
     existing_pairs_basic_wide = []
+
+    all_endpoints = set(dataf.get_column("NAME"))
+
+    for ee in all_endpoints:
+        if ee.startswith("C3_") and ee.endswith("_WIDE"):
+            basic = ee.removesuffix("_WIDE")
+            pair = [basic, ee]
+
+            if basic in all_endpoints:
+                existing_pairs_basic_wide.append(pair)
+
+    # NOTE(Vincent 2025-05-27) ::SORTING_FOR_DETERMINISTIC_TESTS
+    # Sorting the elements is not necessary for the correctness of checking the
+    # endpoint definitions, but it is necessary for running the test suite as
+    # it make this function output deterministic. Without it, the order is not
+    # guaranteed to be always the same since it's based on the all_endpoints
+    # set() above.
+    existing_pairs_basic_wide = sorted(existing_pairs_basic_wide, key=lambda pair: pair[0])
+
+    return existing_pairs_basic_wide
+
+
+def list_cancer_wide_possible_pairs(dataf):
+    possible_pairs_basic_wide = []
+
+    all_endpoints = set(dataf.get_column("NAME"))
 
     for ee in all_endpoints:
         if ee.startswith("C3_") and ee.endswith("_WIDE"):
@@ -490,10 +506,10 @@ def list_cancer_wide_pairs(all_endpoints):
 
             possible_pairs_basic_wide.append(pair)
 
-            if basic in all_endpoints:
-                existing_pairs_basic_wide.append(pair)
+    # NOTE(Vincent 2025-05-27)  See ::SORTING_FOR_DETERMINISTIC_TESTS
+    possible_pairs_basic_wide = sorted(possible_pairs_basic_wide, key=lambda pair: pair[0])
 
-    return possible_pairs_basic_wide, existing_pairs_basic_wide
+    return possible_pairs_basic_wide
 
 
 def check_pair_has_same_values(dataf, basic, wide, columns):
