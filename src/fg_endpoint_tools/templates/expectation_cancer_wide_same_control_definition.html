@@ -3,14 +3,14 @@
 {% set expectation = expectations.cancer_wide_same_control_definition %}
 
 {% block description %}
-  I am expecting all cancer <code>_WIDE</code> endpoints to have same control definition as their corresponding basic endpoints.
+  I am expecting all cancer <code>C3&hellip;WIDE</code> endpoints to have same control definition as their corresponding basic endpoints.
 
 {% endblock %}
 
 
 {% block output_details %}
   <p>
-    Found <b>{{ expectation.endpoints_in_error | length }}</b> pairs of {cancer <code>_WIDE</code> endpoints &ndash; basic endpoints} with different control definition in the columns:
+    Found <b>{{ expectation.endpoints_in_error | length }}</b> pairs of {cancer <code>C3&hellip;WIDE</code> endpoints &ndash; basic endpoints} with different control definition in the columns:
     <code>CONTROL_EXCLUDE</code>,
     <code>CONTROL_PRECONDITIONS</code>,
     <code>CONTROL_CONDITIONS</code>.

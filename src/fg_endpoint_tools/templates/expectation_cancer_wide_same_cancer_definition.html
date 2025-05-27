@@ -3,12 +3,12 @@
 {% set expectation = expectations.cancer_wide_same_cancer_definition %}
 
 {% block description %}
-  I am expecting all cancer <code>_WIDE</code> endpoints to have the same cancer definition as their basic endpoint.
+  I am expecting all cancer <code>C3&hellip;WIDE</code> endpoints to have the same cancer definition as their basic endpoint.
 {% endblock %}
 
 
 {% block output_details %}
-  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> pairs of {cancer <code>_WIDE</code> endpoint &ndash; basic endpoint} with a different cancer definition in the columns <code>CANC_TOPO</code>, <code>CANC_TOPO_EXCL</code>, <code>CANC_MORPH</code>, <code>CANC_MORPH_EXCL</code>, <code>CANC_BEHAV</code>.</p>
+  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> pairs of {cancer <code>C3&hellip;WIDE</code> endpoint &ndash; basic endpoint} with a different cancer definition in the columns <code>CANC_TOPO</code>, <code>CANC_TOPO_EXCL</code>, <code>CANC_MORPH</code>, <code>CANC_MORPH_EXCL</code>, <code>CANC_BEHAV</code>.</p>
 
   {# TODO(Vincent 2025-04-23) This table generation should be refactored since we use it for a couple of expectations. #}
   {% if expectation.endpoints_in_error %}

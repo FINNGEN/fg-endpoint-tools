@@ -3,13 +3,13 @@
 {% set expectation = expectations.cancer_wide_have_hilmo_definition %}
 
 {% block description %}
-  I am expecting all cancer <code>_WIDE</code> endpoints to have a Hilmo definition.
+  I am expecting all cancer <code>C3&hellip;WIDE</code> endpoints to have a Hilmo definition.
 {% endblock %}
 
 
 {% block output_details %}
   <p>
-    Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>_WIDE</code> endpoints without a Hilmo definition, and no Hilmo definition from endpoints in their <code>INCLUDE</code> chain either.
+    Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>C3&hellip;WIDE</code> endpoints without a Hilmo definition, and no Hilmo definition from endpoints in their <code>INCLUDE</code> chain either.
   </p>
   <p>I am checking the following columns for Hilmo codes:
     <code>HD_ICD_10</code>, <code>HD_ICD_9</code>, <code>HD_ICD_8</code>, <code>HD_ICD_10_EXCL</code>, <code>HD_ICD_9_EXCL</code>, <code>HD_ICD_8_EXCL</code>.

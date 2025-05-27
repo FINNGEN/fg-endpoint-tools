@@ -3,13 +3,13 @@
 {% set expectation = expectations.cancer_wide_basic_have_no_hilmo_definition %}
 
 {% block description %}
-  I am expecting all basic endpoints of cancer <code>_WIDE</code> endpoints to have <i>no</i> Hilmo definition.
+  I am expecting all basic endpoints of cancer <code>C3&hellip;WIDE</code> endpoints to have <i>no</i> Hilmo definition.
 {% endblock %}
 
 
 {% block output_details %}
   <p>
-    Found <b>{{ expectation.endpoints_in_error | length }}</b> basic endpoints (counterpart of their cancer <code>_WIDE</code> endpoints) that have a definition in some of the Hilmo columns when they should not.
+    Found <b>{{ expectation.endpoints_in_error | length }}</b> basic endpoints (counterpart of their cancer <code>C3&hellip;WIDE</code> endpoints) that have a definition in some of the Hilmo columns when they should not.
   </p>
 
   {% if expectation.endpoints_in_error %}

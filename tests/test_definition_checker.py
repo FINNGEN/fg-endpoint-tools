@@ -134,6 +134,18 @@ def test_no_exmore():
     assert expected_result == definition_checker.assess_any_exmore(dataf_no_exmore)
 
 
+def test_cancer_wide__name_match_c3_wide():
+    all_endpoints = set(
+        ["incorrect_WIDE", "incorrect", "C3_correct_WIDE", "C3_correct"]
+    )
+
+    expected_possible_pairs = [["C3_correct", "C3_correct_WIDE"]]
+    expected_existing_pairs = [["C3_correct", "C3_correct_WIDE"]]
+    expected = (expected_possible_pairs, expected_existing_pairs)
+
+    assert expected == definition_checker.list_cancer_wide_pairs(all_endpoints)
+
+
 def test_cancer_wide__wide_have_basic_endpoints():
     # 1. Bad
     dataf_bad = pl.DataFrame({"NAME": ["my_endpoint_bad_WIDE"]})

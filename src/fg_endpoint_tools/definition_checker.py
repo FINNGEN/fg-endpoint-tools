@@ -24,11 +24,6 @@ For example, for the include OMIT=2 expectation:
 1. Add `OMIT=2` to this endpoint.
 2. Remove `OMIT=2` for the included endpoint.
 3. Remove the included endpoint from the `INCLUDE` list.
-
-
-TODO(Vincent 2025-05-23)  Make sure we check not all endpionts in the "cancer WIDE" checks.
-For example, we are now reporting T1D which is unrelated to Cancer.
---> Only consider "cancer WIDE" that match "C3_*_WIDE"
 """
 
 import io
@@ -299,17 +294,9 @@ def assess_wide_cancer_endpoints(dataf):
 
     all_endpoints = set(dataf.get_column("NAME"))
 
-    possible_pairs_basic_wide = []
-    existing_pairs_basic_wide = []
-    for ee in all_endpoints:
-        if ee.endswith("_WIDE"):
-            basic = ee.removesuffix("_WIDE")
-            pair = [basic, ee]
-
-            possible_pairs_basic_wide.append(pair)
-
-            if basic in all_endpoints:
-                existing_pairs_basic_wide.append(pair)
+    possible_pairs_basic_wide, existing_pairs_basic_wide = list_cancer_wide_pairs(
+        all_endpoints
+    )
 
     expectations = [
         assess_cancer_wide_have_basic_endpoints(
@@ -490,6 +477,23 @@ def assess_cancer_wide_basic_have_no_hilmo(dataf, list_basic_endpoints):
         data=data,
         excel_file_b64=excel_b64,
     )
+
+
+def list_cancer_wide_pairs(all_endpoints):
+    possible_pairs_basic_wide = []
+    existing_pairs_basic_wide = []
+
+    for ee in all_endpoints:
+        if ee.startswith("C3_") and ee.endswith("_WIDE"):
+            basic = ee.removesuffix("_WIDE")
+            pair = [basic, ee]
+
+            possible_pairs_basic_wide.append(pair)
+
+            if basic in all_endpoints:
+                existing_pairs_basic_wide.append(pair)
+
+    return possible_pairs_basic_wide, existing_pairs_basic_wide
 
 
 def check_pair_has_same_values(dataf, basic, wide, columns):

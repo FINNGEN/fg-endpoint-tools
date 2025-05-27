@@ -3,17 +3,17 @@
 {% set expectation = expectations.cancer_wide_has_basic_endpoint %}
 
 {% block description %}
-  I am expecting all cancer <code>_WIDE</code> endpoints to have a corresponding basic endpoint (i.e. without the <code>_WIDE</code> suffix).
+  I am expecting all cancer <code>C3&hellip;WIDE</code> endpoints to have a corresponding basic endpoint (i.e. without the <code>_WIDE</code> suffix).
 {% endblock %}
 
 
 {% block output_details %}
-  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>_WIDE</code> endpoints without a corresponting basic endpoints.</p>
+  <p>Found <b>{{ expectation.endpoints_in_error | length }}</b> cancer <code>C3&hellip;WIDE</code> endpoints without a corresponting basic endpoints.</p>
 
   {% if expectation.endpoints_in_error %}
     <table>
       <tr>
-        <th>Cancer <code>_WIDE</code> endpoint</th>
+        <th>Cancer <code>C3&hellip;WIDE</code> endpoint</th>
         <th>Corresponding basic endpoint</th>
       </tr>
       {% for pair in expectation.data %}
