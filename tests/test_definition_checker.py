@@ -1,6 +1,7 @@
 import polars as pl
 
 from fg_endpoint_tools import definition_checker
+from .helper import nullify_excel
 
 
 COLUMNS_CANCER = [
@@ -28,6 +29,7 @@ def test_duplicate_endpoint_name():
     expected_excel_b64 = definition_checker.write_excel_as_b64(
         dataf_with_dups, expected_data
     )
+
     expected_result = definition_checker.Expectation(
         idname="name_duplicates",
         status=definition_checker.Status.FAIL,
@@ -37,9 +39,9 @@ def test_duplicate_endpoint_name():
         excel_file_b64=expected_excel_b64,
     )
 
-    assert expected_result == definition_checker.assess_duplicates_by_name(
-        dataf_with_dups
-    )
+    actual_result = definition_checker.assess_duplicates_by_name(dataf_with_dups)
+    nullify_excel(expected_result, actual_result)
+    assert expected_result == actual_result
 
     # 2.
     dataf_no_dups = pl.DataFrame({"NAME": ["first_endpoint", "second_endpoint"]})
@@ -56,6 +58,10 @@ def test_duplicate_endpoint_name():
         data=expected_data,
         excel_file_b64=expected_excel_b64,
     )
+
+    actual_result = definition_checker.assess_duplicates_by_name(dataf_no_dups)
+    nullify_excel(expected_result, actual_result)
+    assert expected_result == actual_result
 
 
 def test_no_exallc():
@@ -75,7 +81,9 @@ def test_no_exallc():
         excel_file_b64=expected_excel_b64,
     )
 
-    assert expected_result == definition_checker.assess_any_exallc(dataf_with_exallc)
+    actual_result = definition_checker.assess_any_exallc(dataf_with_exallc)
+    nullify_excel(expected_result, actual_result)
+    assert expected_result == actual_result
 
     # 2.
     dataf_no_exallc = pl.DataFrame({"NAME": "my_endpoint"})
@@ -93,7 +101,9 @@ def test_no_exallc():
         excel_file_b64=expected_excel_b64,
     )
 
-    assert expected_result == definition_checker.assess_any_exallc(dataf_no_exallc)
+    actual_result = definition_checker.assess_any_exallc(dataf_no_exallc)
+    nullify_excel(expected_result, actual_result)
+    assert expected_result == actual_result
 
 
 def test_no_exmore():
@@ -113,7 +123,9 @@ def test_no_exmore():
         excel_file_b64=expected_excel_b64,
     )
 
-    assert expected_result == definition_checker.assess_any_exmore(dataf_with_exmore)
+    actual_result = definition_checker.assess_any_exmore(dataf_with_exmore)
+    nullify_excel(expected_result, actual_result)
+    assert expected_result == actual_result
 
     # 2.
     dataf_no_exmore = pl.DataFrame({"NAME": "my_endpoint"})
@@ -131,7 +143,9 @@ def test_no_exmore():
         excel_file_b64=expected_excel_b64,
     )
 
-    assert expected_result == definition_checker.assess_any_exmore(dataf_no_exmore)
+    actual_result = definition_checker.assess_any_exmore(dataf_no_exmore)
+    nullify_excel(expected_result, actual_result)
+    assert expected_result == actual_result
 
 
 def test_cancer_wide__name_match_c3_wide():
@@ -151,20 +165,19 @@ def test_cancer_wide__name_match_c3_wide():
         }
     )
 
+    # 1. Possible pairs
     expected_possible_pairs = [
         ["C3_correct", "C3_correct_WIDE"],
         ["C3_possible", "C3_possible_WIDE"],
     ]
-    assert (
-        expected_possible_pairs
-        == definition_checker.list_cancer_wide_possible_pairs(dataf)
-    )
+    actual_possible_pairs = definition_checker.list_cancer_wide_possible_pairs(dataf)
+    assert expected_possible_pairs == actual_possible_pairs
 
+    # 2. Existing pairs
     expected_existing_pairs = [["C3_correct", "C3_correct_WIDE"]]
-    assert (
-        expected_existing_pairs
-        == definition_checker.list_cancer_wide_existing_pairs(dataf)
-    )
+
+    actual_existing_pairs = definition_checker.list_cancer_wide_existing_pairs(dataf)
+    assert expected_existing_pairs == actual_existing_pairs
 
 
 def test_cancer_wide__wide_have_basic_endpoints():
@@ -186,9 +199,9 @@ def test_cancer_wide__wide_have_basic_endpoints():
         excel_file_b64=excel_bad,
     )
 
-    assert expected_bad == definition_checker.assess_cancer_wide_have_basic_endpoints(
-        dataf_bad
-    )
+    actual_bad = definition_checker.assess_cancer_wide_have_basic_endpoints(dataf_bad)
+    nullify_excel(expected_bad, actual_bad)
+    assert expected_bad == actual_bad
 
     # 2. Good
     dataf_good = pl.DataFrame(
@@ -212,9 +225,9 @@ def test_cancer_wide__wide_have_basic_endpoints():
         excel_file_b64=excel_good,
     )
 
-    assert expected_good == definition_checker.assess_cancer_wide_have_basic_endpoints(
-        dataf_good
-    )
+    actual_good = definition_checker.assess_cancer_wide_have_basic_endpoints(dataf_good)
+    nullify_excel(expected_good, actual_good)
+    assert expected_good == actual_good
 
 
 def test_cancer_wide__same_cancer_definition():
@@ -282,9 +295,11 @@ def test_cancer_wide__same_cancer_definition():
         excel_file_b64=excel_bad,
     )
 
-    assert expected_bad == definition_checker.assess_cancer_wide_same_cancer_definition(
+    actual_bad = definition_checker.assess_cancer_wide_same_cancer_definition(
         dataf_bad, COLUMNS_CANCER
     )
+    nullify_excel(expected_bad, actual_bad)
+    assert expected_bad == actual_bad
 
     # 2. Good
     dataf_good = pl.DataFrame(
@@ -309,12 +324,11 @@ def test_cancer_wide__same_cancer_definition():
         excel_file_b64=excel_good,
     )
 
-    assert (
-        expected_good
-        == definition_checker.assess_cancer_wide_same_cancer_definition(
-            dataf_good, COLUMNS_CANCER
-        )
+    actual_good = definition_checker.assess_cancer_wide_same_cancer_definition(
+        dataf_good, COLUMNS_CANCER
     )
+    nullify_excel(expected_good, actual_good)
+    assert expected_good == actual_good
 
 
 def test_cancer_wide__same_control_definition():
@@ -376,12 +390,11 @@ def test_cancer_wide__same_control_definition():
         excel_file_b64=excel_bad,
     )
 
-    assert (
-        expected_bad
-        == definition_checker.assess_cancer_wide_same_control_definition(
-            dataf_bad, COLUMNS_CONTROL
-        )
+    actual_bad = definition_checker.assess_cancer_wide_same_control_definition(
+        dataf_bad, COLUMNS_CONTROL
     )
+    nullify_excel(expected_bad, actual_bad)
+    assert expected_bad == actual_bad
 
     # 2. Good
     dataf_good = pl.DataFrame(
@@ -404,12 +417,11 @@ def test_cancer_wide__same_control_definition():
         excel_file_b64=excel_good,
     )
 
-    assert (
-        expected_good
-        == definition_checker.assess_cancer_wide_same_control_definition(
-            dataf_good, COLUMNS_CONTROL
-        )
+    actual_good = definition_checker.assess_cancer_wide_same_control_definition(
+        dataf_good, COLUMNS_CONTROL
     )
+    nullify_excel(expected_good, actual_good)
+    assert expected_good == actual_good
 
 
 def test_cancer_wide__wide_have_hilmo():
@@ -455,7 +467,9 @@ def test_cancer_wide__wide_have_hilmo():
         excel_file_b64=excel_bad,
     )
 
-    assert expected_bad == definition_checker.assess_cancer_wide_have_hilmo(dataf_bad)
+    actual_bad = definition_checker.assess_cancer_wide_have_hilmo(dataf_bad)
+    nullify_excel(expected_bad, actual_bad)
+    assert expected_bad == actual_bad
 
     # 2.
     dataf_good = pl.DataFrame(
@@ -482,7 +496,9 @@ def test_cancer_wide__wide_have_hilmo():
         excel_file_b64=excel_good,
     )
 
-    assert expected_good == definition_checker.assess_cancer_wide_have_hilmo(dataf_good)
+    actual_good = definition_checker.assess_cancer_wide_have_hilmo(dataf_good)
+    nullify_excel(expected_good, actual_good)
+    assert expected_good, actual_good
 
 
 def test_wide_cancer__basic_have_no_hilmo():
@@ -526,9 +542,9 @@ def test_wide_cancer__basic_have_no_hilmo():
         excel_file_b64=excel_bad,
     )
 
-    assert expected_bad == definition_checker.assess_cancer_wide_basic_have_no_hilmo(
-        dataf_bad
-    )
+    actual_bad = definition_checker.assess_cancer_wide_basic_have_no_hilmo(dataf_bad)
+    nullify_excel(expected_bad, actual_bad)
+    assert expected_bad == actual_bad
 
     # 2. Good
     dataf_good = pl.DataFrame(
@@ -555,9 +571,9 @@ def test_wide_cancer__basic_have_no_hilmo():
         excel_file_b64=excel_good,
     )
 
-    assert expected_good == definition_checker.assess_cancer_wide_basic_have_no_hilmo(
-        dataf_good
-    )
+    actual_good = definition_checker.assess_cancer_wide_basic_have_no_hilmo(dataf_good)
+    nullify_excel(expected_good, actual_good)
+    assert expected_good == actual_good
 
 
 def test_util_rec_targets_of():
@@ -657,4 +673,5 @@ def test_regression__wide_have_hilmo_not_triggering():
         if xx.idname == "cancer_wide_have_hilmo_definition":
             triggered_expectation = xx
 
+    nullify_excel(expected, triggered_expectation)
     assert expected == triggered_expectation

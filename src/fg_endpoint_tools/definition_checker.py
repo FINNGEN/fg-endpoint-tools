@@ -489,7 +489,9 @@ def list_cancer_wide_existing_pairs(dataf):
     # it make this function output deterministic. Without it, the order is not
     # guaranteed to be always the same since it's based on the all_endpoints
     # set() above.
-    existing_pairs_basic_wide = sorted(existing_pairs_basic_wide, key=lambda pair: pair[0])
+    existing_pairs_basic_wide = sorted(
+        existing_pairs_basic_wide, key=lambda pair: pair[0]
+    )
 
     return existing_pairs_basic_wide
 
@@ -507,7 +509,9 @@ def list_cancer_wide_possible_pairs(dataf):
             possible_pairs_basic_wide.append(pair)
 
     # NOTE(Vincent 2025-05-27)  See ::SORTING_FOR_DETERMINISTIC_TESTS
-    possible_pairs_basic_wide = sorted(possible_pairs_basic_wide, key=lambda pair: pair[0])
+    possible_pairs_basic_wide = sorted(
+        possible_pairs_basic_wide, key=lambda pair: pair[0]
+    )
 
     return possible_pairs_basic_wide
 
