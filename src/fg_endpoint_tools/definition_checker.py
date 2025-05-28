@@ -16,7 +16,7 @@ Assumptions:
 - must: all descendants endpoints (from `INCLUDE` recursively) must exist
 - should: no duplicate endpoints in the `INCLUDE` field
 - must: all _COMORB endpoints are OMIT=2
-- TODO should: C3_CANCER contains all the C3_* cancer endpoints via its INCLUDE definition
+- should: C3_CANCER contains all the C3_* cancer endpoints via its INCLUDE definition
 
 
 TODO(Vincent 2025-05-16)  Add proposed fixes for each expectation:
@@ -109,6 +109,7 @@ def collect_report(file_like):
             assess_simple_names(dataf),
             assess_any_exallc(dataf),
             assess_any_exmore(dataf),
+            assess_all_c3_included_in_c3_cancer(dataf),
             assess_hd_cod_same_icd(dataf),
             assess_comorb_are_omit2(dataf),
         ]
@@ -604,6 +605,55 @@ def check_endpoint_or_descendants_have_hilmo_definition(dataf, endpoint):
     data = {"endpoint": endpoint, "descendants": descendants, "table": table_map}
 
     return has_hilmo_definition, data
+
+
+def assess_all_c3_included_in_c3_cancer(dataf):
+    all_c3_endpoints = set(
+        dataf.filter(pl.col("NAME").str.starts_with("C3_")).get_column("NAME")
+    )
+    all_c3_endpoints.remove("C3_CANCER")
+
+    map_parent_children = get_map_parent_children(dataf)
+    map_parent_descendants = get_map_parent_descendants(map_parent_children)
+
+    c3_cancer_all_descendants = map_parent_descendants["C3_CANCER"]
+    descendants_c3 = c3_cancer_all_descendants.intersection(all_c3_endpoints)
+    descendants_non_c3 = c3_cancer_all_descendants - all_c3_endpoints
+    c3_missing_from_c3_cancer = all_c3_endpoints - c3_cancer_all_descendants
+
+    descendants_non_c3 = sorted(descendants_non_c3)
+    c3_missing_from_c3_cancer = sorted(c3_missing_from_c3_cancer)
+
+    data = {
+        "n_c3_cancer_all_descendants": len(c3_cancer_all_descendants),
+        "n_descendants_c3": len(descendants_c3),
+        "descendants_non_c3": descendants_non_c3,
+        "c3_missing_from_c3_cancer": c3_missing_from_c3_cancer,
+        "n_c3_cancer_endpoints": len(all_c3_endpoints),
+    }
+
+    if c3_cancer_all_descendants == all_c3_endpoints:
+        return Expectation(
+            idname="all_c3_included_in_c3_cancer",
+            status=Status.ALL_GOOD,
+            n_errors=0,
+            endpoints_in_error=[],
+            data=data,
+            excel_file_b64="",
+        )
+
+    else:
+        endpoints_in_error = c3_missing_from_c3_cancer
+        excel_b64 = write_excel_as_b64(dataf, endpoints_in_error)
+
+        return Expectation(
+            idname="all_c3_included_in_c3_cancer",
+            status=Status.WARNING,
+            n_errors=len(endpoints_in_error),
+            endpoints_in_error=endpoints_in_error,
+            data=data,
+            excel_file_b64=excel_b64,
+        )
 
 
 def assess_hd_cod_same_icd(dataf):

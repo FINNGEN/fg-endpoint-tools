@@ -162,6 +162,82 @@ def test_cancer_wide__name_match_c3_wide():
     assert expected_existing_pairs == actual_existing_pairs
 
 
+def test_all_c3_included_in_c3_cancer():
+    # 1. Bad
+    dataf_bad = pl.DataFrame(
+        {
+            "NAME": [
+                "C3_CANCER",  #
+                "unrelated",
+                "C3_parent",
+                "C3_child",
+            ],
+            "INCLUDE": [
+                "C3_child",  # missing "C3_parent"
+                None,
+                None,
+                None,
+            ],
+        }
+    )
+
+    expected_bad = definition_checker.Expectation(
+        idname="all_c3_included_in_c3_cancer",
+        status=definition_checker.Status.WARNING,
+        n_errors=1,
+        endpoints_in_error=["C3_parent"],
+        data={
+            "n_c3_cancer_all_descendants": 1,
+            "n_descendants_c3": 1,
+            "descendants_non_c3": [],
+            "c3_missing_from_c3_cancer": ["C3_parent"],
+            "n_c3_cancer_endpoints": 2,
+        },
+        excel_file_b64="not checked",
+    )
+
+    actual_bad = definition_checker.assess_all_c3_included_in_c3_cancer(dataf_bad)
+    nullify_excel(expected_bad, actual_bad)
+    assert expected_bad == actual_bad
+
+    # 2. Good
+    dataf_good = pl.DataFrame(
+        {
+            "NAME": [
+                "C3_CANCER",  #
+                "unrelated",
+                "C3_parent",
+                "C3_child",
+            ],
+            "INCLUDE": [
+                "C3_parent",  # C3_CANCER <- C3_parent <- C3_child
+                None,
+                "C3_child",
+                None,
+            ],
+        }
+    )
+
+    expected_good = definition_checker.Expectation(
+        idname="all_c3_included_in_c3_cancer",
+        status=definition_checker.Status.ALL_GOOD,
+        n_errors=0,
+        endpoints_in_error=[],
+        data={
+            "n_c3_cancer_all_descendants": 2,
+            "n_descendants_c3": 2,
+            "descendants_non_c3": [],
+            "c3_missing_from_c3_cancer": [],
+            "n_c3_cancer_endpoints": 2,
+        },
+        excel_file_b64="not checked",
+    )
+
+    actual_good = definition_checker.assess_all_c3_included_in_c3_cancer(dataf_good)
+    nullify_excel(expected_good, actual_good)
+    assert expected_good == actual_good
+
+
 def test_cancer_wide__wide_have_basic_endpoints():
     # 1. Bad
     dataf_bad = pl.DataFrame(
