@@ -26,9 +26,6 @@ def test_duplicate_endpoint_name():
     )
 
     expected_data = ["my_endpoint"]
-    expected_excel_b64 = definition_checker.write_excel_as_b64(
-        dataf_with_dups, expected_data
-    )
 
     expected_result = definition_checker.Expectation(
         idname="name_duplicates",
@@ -36,7 +33,7 @@ def test_duplicate_endpoint_name():
         n_errors=1,
         endpoints_in_error=["my_endpoint"],
         data=["my_endpoint"],
-        excel_file_b64=expected_excel_b64,
+        excel_file_b64="",
     )
 
     actual_result = definition_checker.assess_duplicates_by_name(dataf_with_dups)
@@ -47,16 +44,13 @@ def test_duplicate_endpoint_name():
     dataf_no_dups = pl.DataFrame({"NAME": ["first_endpoint", "second_endpoint"]})
 
     expected_data = []
-    expected_excel_b64 = definition_checker.write_excel_as_b64(
-        dataf_no_dups, expected_data
-    )
     expected_result = definition_checker.Expectation(
         idname="name_duplicates",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=[],
         data=expected_data,
-        excel_file_b64=expected_excel_b64,
+        excel_file_b64="",
     )
 
     actual_result = definition_checker.assess_duplicates_by_name(dataf_no_dups)
@@ -69,16 +63,13 @@ def test_no_exallc():
     dataf_with_exallc = pl.DataFrame({"NAME": "my_EXALLC"})
 
     expected_data = ["my_EXALLC"]
-    expected_excel_b64 = definition_checker.write_excel_as_b64(
-        dataf_with_exallc, expected_data
-    )
     expected_result = definition_checker.Expectation(
         idname="name_any_exallc",
         status=definition_checker.Status.WARNING,
         n_errors=1,
         endpoints_in_error=expected_data,
         data=expected_data,
-        excel_file_b64=expected_excel_b64,
+        excel_file_b64="",
     )
 
     actual_result = definition_checker.assess_any_exallc(dataf_with_exallc)
@@ -89,16 +80,13 @@ def test_no_exallc():
     dataf_no_exallc = pl.DataFrame({"NAME": "my_endpoint"})
 
     expected_data = []
-    expected_excel_b64 = definition_checker.write_excel_as_b64(
-        dataf_no_exallc, expected_data
-    )
     expected_result = definition_checker.Expectation(
         idname="name_any_exallc",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=expected_data,
         data=expected_data,
-        excel_file_b64=expected_excel_b64,
+        excel_file_b64="",
     )
 
     actual_result = definition_checker.assess_any_exallc(dataf_no_exallc)
@@ -111,16 +99,13 @@ def test_no_exmore():
     dataf_with_exmore = pl.DataFrame({"NAME": "my_EXMORE"})
 
     expected_data = ["my_EXMORE"]
-    expected_excel_b64 = definition_checker.write_excel_as_b64(
-        dataf_with_exmore, expected_data
-    )
     expected_result = definition_checker.Expectation(
         idname="name_any_exmore",
         status=definition_checker.Status.WARNING,
         n_errors=1,
         endpoints_in_error=expected_data,
         data=expected_data,
-        excel_file_b64=expected_excel_b64,
+        excel_file_b64="",
     )
 
     actual_result = definition_checker.assess_any_exmore(dataf_with_exmore)
@@ -131,16 +116,13 @@ def test_no_exmore():
     dataf_no_exmore = pl.DataFrame({"NAME": "my_endpoint"})
 
     expected_data = []
-    expected_excel_b64 = definition_checker.write_excel_as_b64(
-        dataf_no_exmore, expected_data
-    )
     expected_result = definition_checker.Expectation(
         idname="name_any_exmore",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=expected_data,
         data=expected_data,
-        excel_file_b64=expected_excel_b64,
+        excel_file_b64="",
     )
 
     actual_result = definition_checker.assess_any_exmore(dataf_no_exmore)
@@ -186,17 +168,13 @@ def test_cancer_wide__wide_have_basic_endpoints():
         {"NAME": ["C3_my_endpoint_bad_WIDE", "unrelated_endpoint"]}
     )
 
-    excel_bad = definition_checker.write_excel_as_b64(
-        dataf_bad, ["C3_my_endpoint_bad_WIDE"]
-    )
-
     expected_bad = definition_checker.Expectation(
         idname="cancer_wide_has_basic_endpoint",
         status=definition_checker.Status.FAIL,
         n_errors=1,
         endpoints_in_error=["C3_my_endpoint_bad_WIDE"],
         data=[{"wide": "C3_my_endpoint_bad_WIDE", "basic": "C3_my_endpoint_bad"}],
-        excel_file_b64=excel_bad,
+        excel_file_b64="",
     )
 
     actual_bad = definition_checker.assess_cancer_wide_have_basic_endpoints(dataf_bad)
@@ -214,15 +192,13 @@ def test_cancer_wide__wide_have_basic_endpoints():
         }
     )
 
-    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
-
     expected_good = definition_checker.Expectation(
         idname="cancer_wide_has_basic_endpoint",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=[],
         data=[],
-        excel_file_b64=excel_good,
+        excel_file_b64="",
     )
 
     actual_good = definition_checker.assess_cancer_wide_have_basic_endpoints(dataf_good)
@@ -282,17 +258,13 @@ def test_cancer_wide__same_cancer_definition():
         }
     ]
 
-    excel_bad = definition_checker.write_excel_as_b64(
-        dataf_bad, ["C3_my_endpoint_WIDE", "C3_my_endpoint"]
-    )
-
     expected_bad = definition_checker.Expectation(
         idname="cancer_wide_same_cancer_definition",
         status=definition_checker.Status.FAIL,
         n_errors=1,
         endpoints_in_error=["C3_my_endpoint_WIDE"],
         data=data_bad,
-        excel_file_b64=excel_bad,
+        excel_file_b64="",
     )
 
     actual_bad = definition_checker.assess_cancer_wide_same_cancer_definition(
@@ -313,15 +285,13 @@ def test_cancer_wide__same_cancer_definition():
         }
     )
 
-    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
-
     expected_good = definition_checker.Expectation(
         idname="cancer_wide_same_cancer_definition",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=[],
         data=[],
-        excel_file_b64=excel_good,
+        excel_file_b64="",
     )
 
     actual_good = definition_checker.assess_cancer_wide_same_cancer_definition(
@@ -377,17 +347,13 @@ def test_cancer_wide__same_control_definition():
         }
     ]
 
-    excel_bad = definition_checker.write_excel_as_b64(
-        dataf_bad, ["C3_my_endpoint_WIDE", "C3_my_endpoint"]
-    )
-
     expected_bad = definition_checker.Expectation(
         idname="cancer_wide_same_control_definition",
         status=definition_checker.Status.FAIL,
         n_errors=1,
         endpoints_in_error=["C3_my_endpoint_WIDE"],
         data=data_bad,
-        excel_file_b64=excel_bad,
+        excel_file_b64="",
     )
 
     actual_bad = definition_checker.assess_cancer_wide_same_control_definition(
@@ -406,15 +372,13 @@ def test_cancer_wide__same_control_definition():
         }
     )
 
-    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
-
     expected_good = definition_checker.Expectation(
         idname="cancer_wide_same_control_definition",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=[],
         data=[],
-        excel_file_b64=excel_good,
+        excel_file_b64="",
     )
 
     actual_good = definition_checker.assess_cancer_wide_same_control_definition(
@@ -439,10 +403,6 @@ def test_cancer_wide__wide_have_hilmo():
         }
     )
 
-    excel_bad = definition_checker.write_excel_as_b64(
-        dataf_bad, ["C3_my_endpoint_bad_WIDE"]
-    )
-
     expected_bad = definition_checker.Expectation(
         idname="cancer_wide_have_hilmo_definition",
         status=definition_checker.Status.FAIL,
@@ -464,7 +424,7 @@ def test_cancer_wide__wide_have_hilmo():
                 },
             }
         ],
-        excel_file_b64=excel_bad,
+        excel_file_b64="",
     )
 
     actual_bad = definition_checker.assess_cancer_wide_have_hilmo(dataf_bad)
@@ -485,15 +445,13 @@ def test_cancer_wide__wide_have_hilmo():
         }
     )
 
-    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
-
     expected_good = definition_checker.Expectation(
         idname="cancer_wide_have_hilmo_definition",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=[],
         data=[],
-        excel_file_b64=excel_good,
+        excel_file_b64="",
     )
 
     actual_good = definition_checker.assess_cancer_wide_have_hilmo(dataf_good)
@@ -516,8 +474,6 @@ def test_wide_cancer__basic_have_no_hilmo():
         }
     )
 
-    excel_bad = definition_checker.write_excel_as_b64(dataf_bad, ["C3_my_endpoint_bad"])
-
     expected_bad = definition_checker.Expectation(
         idname="cancer_wide_basic_have_no_hilmo_definition",
         status=definition_checker.Status.FAIL,
@@ -539,7 +495,7 @@ def test_wide_cancer__basic_have_no_hilmo():
                 },
             }
         ],
-        excel_file_b64=excel_bad,
+        excel_file_b64="",
     )
 
     actual_bad = definition_checker.assess_cancer_wide_basic_have_no_hilmo(dataf_bad)
@@ -560,15 +516,13 @@ def test_wide_cancer__basic_have_no_hilmo():
         }
     )
 
-    excel_good = definition_checker.write_excel_as_b64(dataf_good, [])
-
     expected_good = definition_checker.Expectation(
         idname="cancer_wide_basic_have_no_hilmo_definition",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=[],
         data=[],
-        excel_file_b64=excel_good,
+        excel_file_b64="",
     )
 
     actual_good = definition_checker.assess_cancer_wide_basic_have_no_hilmo(dataf_good)
@@ -655,17 +609,13 @@ def test_regression__wide_have_hilmo_not_triggering():
         }
     ]
 
-    excel_b64_expected = definition_checker.write_excel_as_b64(
-        dataf, ["C3_my_endpoint_WIDE"]
-    )
-
     expected = definition_checker.Expectation(
         idname="cancer_wide_have_hilmo_definition",
         status=definition_checker.Status.FAIL,
         n_errors=1,
         endpoints_in_error=["C3_my_endpoint_WIDE"],
         data=data_expected,
-        excel_file_b64=excel_b64_expected,
+        excel_file_b64="",
     )
 
     triggered_expectation = None
