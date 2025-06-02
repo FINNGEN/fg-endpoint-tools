@@ -110,6 +110,7 @@ def collect_report(file_like):
             assess_simple_names(dataf),
             assess_any_exallc(dataf),
             assess_any_exmore(dataf),
+            assess_all_c3_basic_included_in_c3_cancer(dataf),
             assess_all_c3_wide_included_in_c3_cancer_wide(dataf),
             assess_hd_cod_same_icd(dataf),
             assess_comorb_are_omit2(dataf),
@@ -606,6 +607,54 @@ def check_endpoint_or_descendants_have_hilmo_definition(dataf, endpoint):
     data = {"endpoint": endpoint, "descendants": descendants, "table": table_map}
 
     return has_hilmo_definition, data
+
+
+def assess_all_c3_basic_included_in_c3_cancer(dataf):
+    all_c3_basic_endpoints = set(
+        dataf.filter(
+            pl.col("NAME").str.starts_with("C3_")
+            & ~pl.col("NAME").str.ends_with("_WIDE")
+        ).get_column("NAME")
+    )
+    all_c3_basic_endpoints.remove("C3_CANCER")
+
+    map_parent_children = get_map_parent_children(dataf)
+    map_parent_descendants = get_map_parent_descendants(map_parent_children)
+
+    all_descendants_of_c3_cancer = set(map_parent_descendants["C3_CANCER"])
+    c3_basic_descendants_of_c3_cancer = all_descendants_of_c3_cancer.intersection(
+        all_c3_basic_endpoints
+    )
+    non_c3_basic_descendants_of_c3_cancer = (
+        all_descendants_of_c3_cancer - all_c3_basic_endpoints
+    )
+    non_c3_basic_descendants_of_c3_cancer = sorted(
+        non_c3_basic_descendants_of_c3_cancer
+    )
+
+    endpoints_in_error = all_c3_basic_endpoints - all_descendants_of_c3_cancer
+    endpoints_in_error = sorted(endpoints_in_error)
+
+    status = Status.WARNING if endpoints_in_error else Status.ALL_GOOD
+
+    data = {
+        "n_all_descendants_of_c3_cancer": len(all_descendants_of_c3_cancer),
+        "n_c3_basic_descendants_of_c3_cancer": len(c3_basic_descendants_of_c3_cancer),
+        "non_c3_basic_descendants_of_c3_cancer": non_c3_basic_descendants_of_c3_cancer,
+        "c3_basic_missing_from_c3_cancer": endpoints_in_error,
+        "n_c3_basic_endpoints": len(all_c3_basic_endpoints),
+    }
+
+    excel_b64 = write_excel_as_b64(dataf, endpoints_in_error)
+
+    return Expectation(
+        idname="all_c3_basic_included_in_c3_cancer",
+        status=status,
+        n_errors=len(endpoints_in_error),
+        endpoints_in_error=endpoints_in_error,
+        data=data,
+        excel_file_b64=excel_b64,
+    )
 
 
 def assess_all_c3_wide_included_in_c3_cancer_wide(dataf):
