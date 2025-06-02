@@ -1,0 +1,46 @@
+{% extends "base_expectation.html" %}
+
+{% set expectation = expectations.all_c3_wide_included_in_c3_cancer_wide %}
+
+{% block description %}
+I am expecting all the <code>C3&hellip;WIDE</code> cancer endpoints to be in the <code>INCLUDE</code> chain of <code>C3_CANCER_WIDE</code>.
+{% endblock %}
+
+{% block output_details %}
+<p>
+  Found <b>{{ expectation.n_errors }}</b> <code>C3&hellip;WIDE</code> cancer endpoints not in the <code>INCLUDE</code> chain of <code>C3_CANCER_WIDE</code>.
+</p>
+
+{% if expectation.endpoints_in_error %}
+<p>
+  <code>C3_CANCER_WIDE</code> includes {{ expectation.data.n_c3_cancer_wide_all_descendants }} endpoints through its <code>INCLUDE</code> chain:
+</p>
+<ul>
+  <li>{{ expectation.data.n_descendants_c3_wide }} of which are <code>C3&hellip;WIDE</code> cancer endpoints.</li>
+  <li>
+    {{ expectation.data.descendants_non_c3_wide | length }} of which are <i>not</i> <code>C3&hellip;WIDE</code> cancer endpoints:
+    <ol>
+    {% for ee in expectation.data.descendants_non_c3_wide %}
+      <li><code>{{ ee }}</code></li>
+    {% endfor %}
+    </ol>
+  </li>
+</ul>
+
+<p>
+  {{ expectation.data.c3_wide_missing_from_c3_cancer_wide | length }} of the {{ expectation.data.n_c3_wide_endpoints }} <code>C3&hellip;WIDE</code> cancer endpoints are missing from <code>C3_CANCER_WIDE</code>:
+</p>
+
+<table>
+  <tr>
+    <th>Endpoint <code>NAME</code>
+  <tr>
+
+  {% for missing_c3_wide in expectation.data.c3_wide_missing_from_c3_cancer_wide %}
+  <tr>
+    <td><code>{{ missing_c3_wide }}</code></td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+{% endblock %}

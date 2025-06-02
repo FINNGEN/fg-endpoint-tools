@@ -162,18 +162,20 @@ def test_cancer_wide__name_match_c3_wide():
     assert expected_existing_pairs == actual_existing_pairs
 
 
-def test_all_c3_included_in_c3_cancer():
+def test_all_c3_wide_included_in_c3_cancer_wide():
     # 1. Bad
     dataf_bad = pl.DataFrame(
         {
             "NAME": [
-                "C3_CANCER",  #
+                "C3_CANCER_WIDE",  #
                 "unrelated",
-                "C3_parent",
-                "C3_child",
+                "C3_parent_WIDE",
+                "C3_child_WIDE",
+                "C3_but_notwide",
             ],
             "INCLUDE": [
-                "C3_child",  # missing "C3_parent"
+                "C3_child_WIDE",  # missing "C3_parent_WIDE"
+                None,
                 None,
                 None,
                 None,
@@ -182,21 +184,23 @@ def test_all_c3_included_in_c3_cancer():
     )
 
     expected_bad = definition_checker.Expectation(
-        idname="all_c3_included_in_c3_cancer",
+        idname="all_c3_wide_included_in_c3_cancer_wide",
         status=definition_checker.Status.WARNING,
         n_errors=1,
-        endpoints_in_error=["C3_parent"],
+        endpoints_in_error=["C3_parent_WIDE"],
         data={
-            "n_c3_cancer_all_descendants": 1,
-            "n_descendants_c3": 1,
-            "descendants_non_c3": [],
-            "c3_missing_from_c3_cancer": ["C3_parent"],
-            "n_c3_cancer_endpoints": 2,
+            "n_c3_cancer_wide_all_descendants": 1,
+            "n_descendants_c3_wide": 1,
+            "descendants_non_c3_wide": [],
+            "c3_wide_missing_from_c3_cancer_wide": ["C3_parent_WIDE"],
+            "n_c3_wide_endpoints": 2,
         },
         excel_file_b64="not checked",
     )
 
-    actual_bad = definition_checker.assess_all_c3_included_in_c3_cancer(dataf_bad)
+    actual_bad = definition_checker.assess_all_c3_wide_included_in_c3_cancer_wide(
+        dataf_bad
+    )
     nullify_excel(expected_bad, actual_bad)
     assert expected_bad == actual_bad
 
@@ -204,36 +208,40 @@ def test_all_c3_included_in_c3_cancer():
     dataf_good = pl.DataFrame(
         {
             "NAME": [
-                "C3_CANCER",  #
+                "C3_CANCER_WIDE",  #
                 "unrelated",
-                "C3_parent",
-                "C3_child",
+                "C3_parent_WIDE",
+                "C3_child_WIDE",
+                "C3_but_notwide",
             ],
             "INCLUDE": [
-                "C3_parent",  # C3_CANCER <- C3_parent <- C3_child
+                "C3_parent_WIDE",  # C3_CANCER_WIDE <- C3_parent_WIDE <- C3_child_WIDE
                 None,
-                "C3_child",
+                "C3_child_WIDE",
+                None,
                 None,
             ],
         }
     )
 
     expected_good = definition_checker.Expectation(
-        idname="all_c3_included_in_c3_cancer",
+        idname="all_c3_wide_included_in_c3_cancer_wide",
         status=definition_checker.Status.ALL_GOOD,
         n_errors=0,
         endpoints_in_error=[],
         data={
-            "n_c3_cancer_all_descendants": 2,
-            "n_descendants_c3": 2,
-            "descendants_non_c3": [],
-            "c3_missing_from_c3_cancer": [],
-            "n_c3_cancer_endpoints": 2,
+            "n_c3_cancer_wide_all_descendants": 2,
+            "n_descendants_c3_wide": 2,
+            "descendants_non_c3_wide": [],
+            "c3_wide_missing_from_c3_cancer_wide": [],
+            "n_c3_wide_endpoints": 2,
         },
         excel_file_b64="not checked",
     )
 
-    actual_good = definition_checker.assess_all_c3_included_in_c3_cancer(dataf_good)
+    actual_good = definition_checker.assess_all_c3_wide_included_in_c3_cancer_wide(
+        dataf_good
+    )
     nullify_excel(expected_good, actual_good)
     assert expected_good == actual_good
 
