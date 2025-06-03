@@ -645,7 +645,10 @@ def assess_all_c3_basic_included_in_c3_cancer(dataf):
         "n_c3_basic_endpoints": len(all_c3_basic_endpoints),
     }
 
-    excel_b64 = write_excel_as_b64(dataf, endpoints_in_error)
+    if endpoints_in_error:
+        excel_b64 = write_excel_as_b64(dataf, ["C3_CANCER"])
+    else:
+        excel_b64 = write_excel_as_b64(dataf, [])
 
     return Expectation(
         idname="all_c3_basic_included_in_c3_cancer",
@@ -696,12 +699,12 @@ def assess_all_c3_wide_included_in_c3_cancer_wide(dataf):
             n_errors=0,
             endpoints_in_error=[],
             data=data,
-            excel_file_b64="",
+            excel_file_b64=write_excel_as_b64(dataf, []),
         )
 
     else:
         endpoints_in_error = c3_wide_missing_from_c3_cancer_wide
-        excel_b64 = write_excel_as_b64(dataf, endpoints_in_error)
+        excel_b64 = write_excel_as_b64(dataf, ["C3_CANCER_WIDE"])
 
         return Expectation(
             idname="all_c3_wide_included_in_c3_cancer_wide",
