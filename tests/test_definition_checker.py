@@ -779,3 +779,54 @@ def test_regression__wide_have_hilmo_not_triggering():
 
     nullify_excel(expected, triggered_expectation)
     assert expected == triggered_expectation
+
+
+def test_regression__included_endpoints_all_exist():
+    # NOTE(Vincent 2025-08-18)  Missed some endpoints because I was incorrectly
+    # using `not isdisjoint` instead of `issubset`.
+    dataf = pl.DataFrame(
+        {
+            "NAME": [
+                "my_parent_endpoint",
+                "my_child_endpoint_1",
+            ],
+            "INCLUDE": [
+                "my_child_endpoint_1|my_child_endpoint_2_not_exist",
+                "",
+            ],
+            "HD_ICD_10": [None, None],
+            "HD_ICD_9": [None, None],
+            "HD_ICD_8": [None, None],
+            "HD_ICD_10_EXCL": [None, None],
+            "HD_ICD_9_EXCL": [None, None],
+            "HD_ICD_8_EXCL": [None, None],
+            "CANC_TOPO": [None, None],
+            "CANC_TOPO_EXCL": [None, None],
+            "CANC_MORPH": [None, None],
+            "CANC_MORPH_EXCL": [None, None],
+            "CANC_BEHAV": [None, None],
+            "CONTROL_EXCLUDE": [None, None],
+            "CONTROL_PRECONDITIONS": [None, None],
+            "CONTROL_CONDITIONS": [None, None],
+        }
+    )
+
+    data_expected = {
+        "my_parent_endpoint": [
+            {"text": "my_child_endpoint_1|", "bad": False},
+            {"text": "my_child_endpoint_2_not_exist", "bad": True},
+        ]
+    }
+
+    expected = definition_checker.Expectation(
+        idname="include_all_endpoints_exist",
+        status=definition_checker.Status.FAIL,
+        n_errors=1,
+        endpoints_in_error=["my_parent_endpoint"],
+        data=data_expected,
+        excel_file_b64="",
+    )
+
+    actual = definition_checker.assess_include_all_endpoints_exist(dataf)
+    nullify_excel(expected, actual)
+    assert expected == actual

@@ -824,7 +824,7 @@ def assess_include_all_endpoints_exist(dataf):
     for row in subset:
         children = set(row["INCLUDE"].split("|"))
 
-        if children.isdisjoint(all_endpoints):
+        if not children.issubset(all_endpoints):
             endpoints_in_error.append(row["NAME"])
 
     status = Status.FAIL if endpoints_in_error else Status.ALL_GOOD
